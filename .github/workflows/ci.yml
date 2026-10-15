@@ -99,7 +99,7 @@ jobs:
           curl -f -s http://localhost:8000/dashboard | grep 'PJM East AI Energy Forecasting Dashboard'
 
           # Test evaluation metrics endpoint
-          curl -f -s http://localhost:8000/api/evaluation/metrics | grep '"test_sample_count":21773'
+          curl -f -s http://localhost:8000/api/evaluation/metrics | grep -E '"test_sample_count":\s*21773'
 
           # Cleanup
           docker stop forecaster-app

@@ -85,33 +85,85 @@ def diebold_mariano_test(
     pred_benchmark: np.ndarray,
     pred_model: np.ndarray,
     h: int = 1,
+    kernel: str = "bartlett",
+    hln_correction: bool = False,
 ) -> tuple[float, float]:
-    """Calculate Diebold-Mariano test statistic and p-value for absolute forecast errors.
+    """Calculate Diebold-Mariano test statistic and p-value for forecast accuracy comparison.
 
-    Tests null hypothesis H0: E[|e_benchmark| - |e_model|] = 0 (equal accuracy).
-    Positive DM statistic indicates that pred_model has significantly smaller errors.
+    STATISTICAL SPECIFICATION:
+    1. Null Hypothesis (H0):
+       E[d_t] = 0, where d_t is the loss differential. Equal predictive accuracy.
+       Alternative Hypothesis (H1):
+       E[d_t] != 0 (two-sided).
+    2. Loss Differential Definition & Sign Convention:
+       d_t = |y_t - y_hat_benchmark,t| - |y_t - y_hat_model,t| = e_bench,t - e_model,t
+       Under this convention:
+       - d_t > 0 when the model error is strictly smaller than the benchmark error.
+       - A positive DM statistic (DM > 0) indicates superior accuracy for pred_model.
+    3. Long-Run Variance Estimator & Lag Selection:
+       For multi-step h-ahead forecasts, forecast errors exhibit up to MA(h-1) serial dependence.
+       The long-run asymptotic variance of d_bar is estimated as:
+         V_hat(d_bar) = (1 / n) * [ gamma_0 + 2 * sum_{k=1}^{h-1} w_k * gamma_k ]
+       where gamma_k is the sample autocovariance of d at lag k.
+       Lag selection is truncated at h - 1 lags (h - 1 = 0 for H=1; 23 for H=24; 47 for H=48).
+       - kernel='bartlett': w_k = 1.0 - (k / h) (Newey-West Bartlett triangular decay).
+         Guarantees positive semi-definiteness.
+       - kernel='unweighted': w_k = 1.0 (Uniform rectangular window, used in Phase 2 baseline).
+    4. Finite-Sample Correction (Harvey, Leybourne, Newbold 1997):
+       If hln_correction=True, multiplies the DM statistic by:
+         sqrt( (n + 1 - 2*h + h*(h-1)/n) / n )
+       and evaluates p-values using Student's t-distribution with (n - 1) degrees of freedom.
+    5. Discrepancy Reconciliation:
+       - H=1: h=1 -> sum is empty -> DM=15.91 regardless of kernel.
+       - H=24: unweighted DM=17.86 (Phase 2/4), Bartlett DM=21.37 (Phase 3/5/6).
+       - H=48: unweighted DM=15.10 (Phase 2/4), Bartlett DM=18.37 (Phase 3/5/6).
+
+    Args:
+        y_true: Ground truth observed series.
+        pred_benchmark: Forecasts from baseline model.
+        pred_model: Forecasts from candidate/production model.
+        h: Forecast horizon in hours (default 1).
+        kernel: Autocovariance weighting kernel ('bartlett' or 'unweighted').
+        hln_correction: Whether to apply Harvey-Leybourne-Newbold small sample adjustment.
+
+    Returns:
+        tuple[float, float]: (dm_statistic, p_value).
     """
-    e_bench = np.abs(y_true - pred_benchmark)
-    e_model = np.abs(y_true - pred_model)
+    e_bench = np.abs(np.asarray(y_true) - np.asarray(pred_benchmark))
+    e_model = np.abs(np.asarray(y_true) - np.asarray(pred_model))
     d = e_bench - e_model
     n = len(d)
-    d_mean = np.mean(d)
+    if n == 0:
+        return 0.0, 1.0
 
-    # Autocovariance adjustment for h-step horizon (Newey-West Bartlett kernel)
-    gamma_0 = np.var(d, ddof=0)
+    d_mean = float(np.mean(d))
+    gamma_0 = float(np.var(d, ddof=0))
     gamma_sum = 0.0
+
     for lag in range(1, h):
-        weight = 1.0 - (lag / h)
-        gamma_k = np.mean((d[lag:] - d_mean) * (d[:-lag] - d_mean))
+        if kernel == "bartlett":
+            weight = 1.0 - (lag / h)
+        elif kernel == "unweighted":
+            weight = 1.0
+        else:
+            raise ValueError(f"Unsupported kernel '{kernel}'. Must be 'bartlett' or 'unweighted'.")
+        gamma_k = float(np.mean((d[lag:] - d_mean) * (d[:-lag] - d_mean)))
         gamma_sum += 2.0 * weight * gamma_k
 
     var_d = (gamma_0 + gamma_sum) / n
     if var_d <= 1e-12:
         return 0.0, 1.0
 
-    dm_stat = float(d_mean / np.sqrt(var_d))
-    p_value = float(2.0 * (1.0 - stats.norm.cdf(abs(dm_stat))))
-    return dm_stat, p_value
+    dm_stat = d_mean / np.sqrt(var_d)
+
+    if hln_correction:
+        hln_factor = np.sqrt(max(0.0, (n + 1.0 - 2.0 * h + (h * (h - 1.0)) / n) / n))
+        dm_stat = dm_stat * hln_factor
+        p_value = float(2.0 * (1.0 - stats.t.cdf(abs(dm_stat), df=n - 1)))
+    else:
+        p_value = float(2.0 * (1.0 - stats.norm.cdf(abs(dm_stat))))
+
+    return float(dm_stat), float(p_value)
 
 
 def get_season(month: int) -> str:

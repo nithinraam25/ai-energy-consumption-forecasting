@@ -198,3 +198,77 @@ class TestPhase2Deliverables:
                       (h1_prob["q50_median_mw"] > h1_prob["q95_adaptive_mw"])).sum()
         assert violations == 0
 
+
+class TestTemporalInformationLeakageGuards:
+    """Automated assertions against future-information leakage, origin alignment, and boundary isolation."""
+
+    @pytest.mark.parametrize("h", [1, 24, 48])
+    def test_origin_target_mathematical_consistency(self, h: int):
+        """Verify that target_timestamp is strictly origin + horizon for every single row."""
+        import pandas as pd
+        from src.features.horizon_features import create_horizon_feature_matrix
+
+        dates = pd.date_range("2018-01-01", periods=300, freq="1h")
+        dummy_df = pd.DataFrame({
+            "timestamp": dates,
+            "consumption": np.sin(np.linspace(0, 20, 300)) * 5000.0 + 30000.0,
+        })
+        feat_df = create_horizon_feature_matrix(dummy_df, horizon=h)
+        assert not feat_df.empty
+
+        diffs = feat_df["target_timestamp"] - feat_df["timestamp"]
+        expected_delta = pd.Timedelta(hours=h)
+        assert (diffs == expected_delta).all(), f"All rows in H={h} must have target - origin == {h} hours"
+
+    @pytest.mark.parametrize("h", [1, 24, 48])
+    def test_features_never_use_future_observations(self, h: int):
+        """Verify that all lag features correspond strictly to timestamps <= t_origin = T - H."""
+        import pandas as pd
+        from src.features.horizon_features import create_horizon_feature_matrix, get_horizon_feature_names
+
+        dates = pd.date_range("2018-01-01", periods=300, freq="1h")
+        raw_consumption = np.arange(300, dtype=float) + 10000.0
+        dummy_df = pd.DataFrame({
+            "timestamp": dates,
+            "consumption": raw_consumption,
+        })
+        feat_df = create_horizon_feature_matrix(dummy_df, horizon=h)
+        feats = get_horizon_feature_names(h, include_weather=False)
+
+        # For every row i, the value of consumption at t_origin is raw_consumption[idx]
+        # Test that no lag feature has a value corresponding to t > t_origin
+        for _, row in feat_df.iterrows():
+            t_orig = row["timestamp"]
+            t_target = row["target_timestamp"]
+            assert t_orig == t_target - pd.Timedelta(hours=h)
+
+            # In this linear sequence, consumption = index + 10000.0
+            val_at_origin = dummy_df.loc[dummy_df["timestamp"] == t_orig, "consumption"].values[0]
+
+            if f"lag_{h}" in feats:
+                assert row[f"lag_{h}"] == val_at_origin, f"lag_{h} must strictly equal consumption at origin t_origin"
+
+            # Check that all lag features are <= val_at_origin (since consumption is monotonically increasing)
+            for f in feats:
+                if f.startswith("lag_"):
+                    lag_num = int(f.split("_")[1])
+                    assert lag_num >= h, f"Feature {f} violates horizon {h}: lag number must be >= {h}"
+                    assert row[f] <= val_at_origin, f"Feature {f} leaks future demand (> val_at_origin)"
+
+    def test_chronological_boundaries_strict_isolation(self):
+        """Verify chronological split guarantees non-overlapping, strictly isolated partitions."""
+        import pandas as pd
+        from src.evaluation.metrics import chronological_split
+
+        dates = pd.date_range("2016-01-01", periods=1000, freq="1h")
+        dummy_df = pd.DataFrame({
+            "timestamp": dates,
+            "val": np.arange(1000),
+        })
+        train_df, val_df, test_df = chronological_split(dummy_df, 0.70, 0.15, 0.15)
+
+        assert train_df["timestamp"].max() < val_df["timestamp"].min()
+        assert val_df["timestamp"].max() < test_df["timestamp"].min()
+        assert len(train_df) + len(val_df) + len(test_df) == 1000
+
+
