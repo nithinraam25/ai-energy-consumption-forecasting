@@ -1,0 +1,56 @@
+services:
+  forecasting-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pjm-energy-forecasting-api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - MODEL_PATH=models/pjm_production_forecaster_phase8.joblib
+      - SCHEMA_PATH=models/production_feature_schema.json
+      - PROB_MODEL_PATH=models/pjm_probabilistic_forecaster_phase9.joblib
+      - CALIBRATION_PATH=models/conformal_calibration_params.json
+      - ADAPTIVE_CALIBRATION_PATH=models/adaptive_calibration_params.json
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    volumes:
+      - weather_cache:/app/data/weather_cache
+
+  weather-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pjm-weather-worker
+    restart: unless-stopped
+    command: ["python", "-m", "src.weather.worker"]
+    environment:
+      - POLL_INTERVAL=300
+    volumes:
+      - weather_cache:/app/data/weather_cache
+    depends_on:
+      - forecasting-api
+
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: pjm-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+    depends_on:
+      - forecasting-api
+
+volumes:
+  weather_cache:

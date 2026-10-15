@@ -1,0 +1,20 @@
+{
+  "model_version": "2.0.0-phase8",
+  "hyperparameters": {
+    "learning_rate": 0.05,
+    "max_iter": 200,
+    "max_depth": 8,
+    "max_leaf_nodes": 45,
+    "l2_regularization": 0.5,
+    "min_samples_leaf": 20,
+    "random_state": 42
+  },
+  "performance_benchmark": {
+    "test_mae_mw": 528.6,
+    "test_rmse_mw": 697.97,
+    "test_r2": 0.9883,
+    "test_mape_pct": 1.7,
+    "baseline_test_mae_mw": 632.39,
+    "mae_improvement_pct": 16.41
+  }
+}

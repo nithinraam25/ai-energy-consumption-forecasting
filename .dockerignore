@@ -1,0 +1,24 @@
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local data directories (avoid bloated image sizes)
+data/raw/
+data/interim/
+data/processed/*
+!data/processed/pjm_cleaned.csv
+!models/*.joblib
+!models/*.json
+
+# Scratch and IDE directories
+.git/
+.gitignore
+.vscode/
+.idea/
+.system_generated/
+*.log

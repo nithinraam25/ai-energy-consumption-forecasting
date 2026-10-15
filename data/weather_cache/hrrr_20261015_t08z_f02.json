@@ -1,0 +1,62 @@
+{
+  "cycle_date": "20261015",
+  "cycle_hour": 8,
+  "lead_hour": 2,
+  "init_time_utc": "2026-10-15T08:00:00+00:00",
+  "valid_time_utc": "2026-10-15T10:00:00+00:00",
+  "available_time_utc": "2026-10-15T08:50:00+00:00",
+  "source_url": "https://noaa-hrrr-bdp-pds.s3.amazonaws.com/hrrr.20261015/conus/hrrr.t08z.wrfprsf02.grib2",
+  "byte_range": [
+    307049291,
+    308235294
+  ],
+  "reference_value_k": 260.8476257324219,
+  "station_temps_f": {
+    "KPHL": 58.06,
+    "KEWR": 54.91,
+    "KILG": 59.61
+  },
+  "station_temps_k": {
+    "KPHL": 287.63,
+    "KEWR": 285.88,
+    "KILG": 288.49
+  },
+  "station_grid_details": {
+    "KPHL": {
+      "temp_k": 287.63,
+      "temp_f": 58.06,
+      "grid_coords": {
+        "i_frac": 1526.41,
+        "j_frac": 656.18,
+        "nearest_i": 1526,
+        "nearest_j": 656
+      },
+      "interpolation_method": "bilinear"
+    },
+    "KEWR": {
+      "temp_k": 285.88,
+      "temp_f": 54.91,
+      "grid_coords": {
+        "i_frac": 1548.24,
+        "j_frac": 692.97,
+        "nearest_i": 1548,
+        "nearest_j": 693
+      },
+      "interpolation_method": "bilinear"
+    },
+    "KILG": {
+      "temp_k": 288.49,
+      "temp_f": 59.61,
+      "grid_coords": {
+        "i_frac": 1518.0,
+        "j_frac": 646.74,
+        "nearest_i": 1518,
+        "nearest_j": 647
+      },
+      "interpolation_method": "bilinear"
+    }
+  },
+  "extraction_method": "ECCODES_GRIB2_BILINEAR_INTERPOLATION",
+  "extraction_method_note": "Decoded genuine grid-point temperature values via ecCodes decompressor with Lambert Conformal bilinear interpolation.",
+  "retrieval_timestamp_utc": "2026-10-15T10:55:53.864859+00:00"
+}

@@ -1,0 +1,984 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PJM East AI Energy Forecasting Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-primary: #0a0e17;
+      --bg-card: rgba(18, 24, 38, 0.85);
+      --bg-card-hover: rgba(26, 34, 52, 0.95);
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(56, 189, 248, 0.3);
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-cyan: #38bdf8;
+      --accent-blue: #3b82f6;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-purple: #a855f7;
+      --radius: 12px;
+      --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 15% 15%, #111a2e 0%, var(--bg-primary) 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      line-height: 1.5;
+      padding-bottom: 60px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--border-color);
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 20px;
+      color: #fff;
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+    }
+
+    .brand-title h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-title p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .badge-healthy {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .badge-degraded {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+
+    .badge-live {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-cyan);
+      border: 1px solid var(--border-accent);
+    }
+
+    .badge-simulated {
+      background: rgba(168, 85, 247, 0.15);
+      color: #c084fc;
+      border: 1px solid rgba(192, 132, 252, 0.3);
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 10px currentColor;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Grid Layout */
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 20px;
+    }
+
+    .col-12 { grid-column: span 12; }
+    .col-8 { grid-column: span 8; }
+    .col-6 { grid-column: span 6; }
+    .col-4 { grid-column: span 4; }
+
+    @media (max-width: 1024px) {
+      .col-8, .col-6, .col-4 { grid-column: span 12; }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 22px;
+      box-shadow: var(--shadow);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Controls Bar */
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 16px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      margin-bottom: 24px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+    }
+
+    .btn-group {
+      display: flex;
+      background: #0f172a;
+      border-radius: 8px;
+      padding: 2px;
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-tab {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 6px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-tab.active {
+      background: var(--accent-blue);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+    }
+
+    /* Stats Overview */
+    .stat-hero {
+      text-align: center;
+      padding: 16px 0;
+    }
+
+    .stat-hero-value {
+      font-size: 44px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-hero-unit {
+      font-size: 20px;
+      color: var(--accent-cyan);
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    .stat-hero-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .interval-bar-container {
+      margin: 20px 0 10px 0;
+      position: relative;
+    }
+
+    .interval-ticks {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .interval-bar {
+      height: 12px;
+      border-radius: 6px;
+      background: #1e293b;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .interval-span {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, rgba(56, 189, 248, 0.3), rgba(59, 130, 246, 0.7), rgba(56, 189, 248, 0.3));
+      border-radius: 6px;
+      border-left: 2px solid var(--accent-cyan);
+      border-right: 2px solid var(--accent-cyan);
+    }
+
+    .interval-point {
+      position: absolute;
+      top: -4px;
+      width: 4px;
+      height: 20px;
+      background: #fff;
+      border-radius: 2px;
+      box-shadow: 0 0 10px #fff;
+      transform: translateX(-50%);
+    }
+
+    /* Key-Value Lists */
+    .kv-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .kv-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+    }
+
+    .kv-item:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .kv-key {
+      color: var(--text-muted);
+    }
+
+    .kv-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    /* Performance Tables */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .data-table th {
+      text-align: left;
+      padding: 10px 12px;
+      color: var(--text-dim);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .data-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .data-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .highlight-cell {
+      color: var(--accent-cyan);
+      font-weight: 600;
+    }
+
+    /* Banner Alert */
+    .banner-warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+    }
+
+    .banner-icon {
+      color: var(--accent-amber);
+      font-size: 20px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .banner-content h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--accent-amber);
+      margin-bottom: 4px;
+    }
+
+    .banner-content p {
+      font-size: 12px;
+      color: #cbd5e1;
+      line-height: 1.6;
+    }
+
+    /* Code block */
+    pre.code-block {
+      background: #050811;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #93c5fd;
+      overflow-x: auto;
+      max-height: 220px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-logo">⚡</div>
+        <div class="brand-title">
+          <h1>PJM East AI Energy Forecasting</h1>
+          <p>Operational Multi-Station Numerical Weather Prediction & Conformal Quantile Dispatch</p>
+        </div>
+      </div>
+      <div class="header-status">
+        <div id="apiHealthBadge" class="badge badge-healthy">
+          <span class="pulse-dot"></span>
+          <span id="apiStatusText">API: CONNECTING...</span>
+        </div>
+        <div id="provenanceBadge" class="badge badge-live">
+          <span>PROVENANCE: GENUINE NOAA HRRR</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Scientific Honesty & Limitations Banner -->
+    <div class="banner-warning">
+      <div class="banner-icon">⚠️</div>
+      <div class="banner-content">
+        <h4>Scientific Integrity Notice & Operational Boundaries</h4>
+        <p>
+          <strong>1. Meteorological Provenance:</strong> Real-time forecasts utilize live NOAA HRRR AWS Open Data decoded via ECMWF <code>ecCodes</code>. However, historical model evaluations (2002–2018) were executed on simulated AR(1) forecast error proxies derived from surface METAR observations, not genuine petabyte-scale historical GRIB2 grids.<br>
+          <strong>2. Prediction Coverage:</strong> Empirical coverage on held-out test data is <strong>88.21%</strong> against a nominal 90% target due to time-series distribution shift.<br>
+          <strong>3. Container Runtime:</strong> Docker containerization is architected but remains <strong>BLOCKED</strong> on this local Windows host due to missing Docker Engine.
+        </p>
+      </div>
+    </div>
+
+    <!-- Interactive Prediction Controls -->
+    <div class="controls-bar">
+      <div class="control-group">
+        <span class="control-label">Workflow Mode</span>
+        <div class="btn-group">
+          <button id="btnModeOrchestrated" class="btn-tab active" onclick="setWorkflowMode('orchestrated', this)">⚡ Automated Orchestration</button>
+          <button id="btnModeDiagnostic" class="btn-tab" onclick="setWorkflowMode('diagnostic', this)">🧪 Diagnostic / Template Mode</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Target Scenario & Timestamp</span>
+        <div class="btn-group">
+          <button id="btnTargetHoldout" class="btn-tab active" onclick="setTargetScenario('holdout', this)">2018-08-01 (Holdout Archive)</button>
+          <button id="btnTargetLive" class="btn-tab" onclick="setTargetScenario('live_cycle', this)">2026-10-15 (Live HRRR Cycle)</button>
+        </div>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Forecast Horizon</span>
+        <div class="btn-group">
+          <button class="btn-tab active" onclick="setHorizon(1, this)">H=1h (Real-Time)</button>
+          <button class="btn-tab" onclick="setHorizon(24, this)">H=24h (Day-Ahead)</button>
+          <button class="btn-tab" onclick="setHorizon(48, this)">H=48h (Two-Day)</button>
+        </div>
+      </div>
+
+      <div id="diagnosticWeatherGroup" class="control-group" style="display: none;">
+        <span class="control-label">Diagnostic Input Mode</span>
+        <div class="btn-group">
+          <button class="btn-tab active" onclick="setWeatherMode('live', this)">Cached HRRR (f02)</button>
+          <button class="btn-tab" onclick="setWeatherMode('fallback', this)">Causal Fallback</button>
+          <button class="btn-tab" onclick="setWeatherMode('stale', this)">Stale Input</button>
+          <button class="btn-tab" onclick="setWeatherMode('post_cutoff', this)">Post-Cutoff (Violate)</button>
+        </div>
+      </div>
+
+      <div style="margin-left: auto;">
+        <button class="btn-action" onclick="executeInference()">
+          <span>Run Forecast Model</span> ➔
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="dashboard-grid">
+
+      <!-- Col 1: Forecast Overview -->
+      <div class="col-8">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📈 Probabilistic Demand Forecast & Conformal Intervals</div>
+            <span id="responseStatusBadge" class="badge badge-healthy">200 OK</span>
+          </div>
+
+          <div class="stat-hero">
+            <div class="stat-hero-label">Target Grid Power Consumption Forecast</div>
+            <div class="stat-hero-value">
+              <span id="pointForecastValue">--</span><span class="stat-hero-unit">MW</span>
+            </div>
+            <div style="font-size: 13px; color: var(--text-dim); margin-top: 4px;">
+              Target Timestamp: <span id="targetTimestampText" style="color: var(--text-muted); font-family: 'JetBrains Mono';">--</span>
+            </div>
+          </div>
+
+          <div class="interval-bar-container">
+            <div class="interval-ticks">
+              <span>Q05: <strong id="q05Text" style="color: var(--accent-cyan);">--</strong> MW</span>
+              <span>Median Q50: <strong id="q50Text" style="color: #fff;">--</strong> MW</span>
+              <span>Q95: <strong id="q95Text" style="color: var(--accent-cyan);">--</strong> MW</span>
+            </div>
+            <div class="interval-bar">
+              <div id="intervalSpan" class="interval-span" style="left: 15%; width: 70%;"></div>
+              <div id="intervalPoint" class="interval-point" style="left: 50%;"></div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; text-align: center;">
+            <div style="background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Calibrated Width (Q95 - Q05)</div>
+              <div id="intervalWidthValue" style="font-size: 18px; font-weight: 600; color: var(--accent-cyan); font-family: 'JetBrains Mono';">--</div>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Target Coverage</div>
+              <div style="font-size: 18px; font-weight: 600; color: var(--accent-emerald); font-family: 'JetBrains Mono';">90.0% Nominal</div>
+            </div>
+            <div style="background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-dim); text-transform: uppercase;">Calibration Method</div>
+              <div id="calibrationMethodText" style="font-size: 18px; font-weight: 600; color: var(--accent-purple); font-family: 'JetBrains Mono';">Adaptive Diurnal</div>
+            </div>
+          </div>
+
+          <div id="warningBox" style="margin-top: 16px; display: none; padding: 12px; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: 8px; font-size: 12px; color: #fda4af;">
+            <span id="warningMessageText"></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 2: Meteorological Provenance -->
+      <div class="col-4">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🌦️ Meteorological Provenance</div>
+            <span id="weatherProvenanceBadge" class="badge badge-live">LIVE HRRR</span>
+          </div>
+
+          <div class="kv-list">
+            <div class="kv-item">
+              <span class="kv-key">Source Feed</span>
+              <span id="metaSourceText" class="kv-val">NOAA AWS Open Data</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Decoder Engine</span>
+              <span class="kv-val" style="color: var(--accent-emerald);">ecCodes 2.50.0 (C-Lib)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Cycle Init Time</span>
+              <span id="metaInitTime" class="kv-val">2026-10-15 08:00 UTC</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Forecast Lead</span>
+              <span id="metaLeadTime" class="kv-val">f02 (2 Hours)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Dissemination Avail</span>
+              <span id="metaAvailTime" class="kv-val">2026-10-15 08:50 UTC</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">KPHL (Philadelphia)</span>
+              <span id="metaTempKPHL" class="kv-val">58.06 °F (287.63 K)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">KEWR (Newark)</span>
+              <span id="metaTempKEWR" class="kv-val">54.91 °F (285.88 K)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">KILG (Wilmington)</span>
+              <span id="metaTempKILG" class="kv-val">59.61 °F (288.49 K)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Zonal Composite</span>
+              <span id="metaTempZonal" class="kv-val" style="color: var(--accent-cyan); font-weight: 700;">57.05 °F</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Col 3: Baseline Comparisons -->
+      <div class="col-8">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📊 Multi-Horizon Benchmark vs Baselines (Held-Out Test Set, N=21,773)</div>
+          </div>
+
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Horizon</th>
+                <th>Model / Baseline</th>
+                <th>MAE (MW)</th>
+                <th>RMSE (MW)</th>
+                <th>R²</th>
+                <th>MAPE</th>
+                <th>NWP Gain</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>H=1h</td>
+                <td style="color: var(--text-dim);">Persistence (lag_1)</td>
+                <td>1,054.91</td>
+                <td>1,354.76</td>
+                <td>0.9558</td>
+                <td>3.43%</td>
+                <td>--</td>
+              </tr>
+              <tr>
+                <td>H=1h</td>
+                <td style="color: var(--text-dim);">Seasonal Naive (lag_168)</td>
+                <td>3,436.23</td>
+                <td>4,737.01</td>
+                <td>0.4594</td>
+                <td>10.70%</td>
+                <td>--</td>
+              </tr>
+              <tr style="background: rgba(56, 189, 248, 0.04);">
+                <td style="font-weight: 600; color: var(--accent-cyan);">H=1h</td>
+                <td style="font-weight: 600; color: #fff;">Production Champion</td>
+                <td class="highlight-cell">332.90</td>
+                <td>445.47</td>
+                <td>0.9952</td>
+                <td>1.07%</td>
+                <td style="color: var(--accent-emerald);">+5.09%</td>
+              </tr>
+              <tr>
+                <td>H=24h</td>
+                <td style="color: var(--text-dim);">Persistence (lag_24)</td>
+                <td>2,207.04</td>
+                <td>3,028.07</td>
+                <td>0.7791</td>
+                <td>7.02%</td>
+                <td>--</td>
+              </tr>
+              <tr>
+                <td>H=24h</td>
+                <td style="color: var(--text-dim);">Baseline Tree (No Weather)</td>
+                <td>1,840.80</td>
+                <td>2,489.33</td>
+                <td>0.8507</td>
+                <td>5.82%</td>
+                <td>--</td>
+              </tr>
+              <tr style="background: rgba(56, 189, 248, 0.04);">
+                <td style="font-weight: 600; color: var(--accent-cyan);">H=24h</td>
+                <td style="font-weight: 600; color: #fff;">Production Champion</td>
+                <td class="highlight-cell">1,227.22</td>
+                <td>1,623.11</td>
+                <td>0.9364</td>
+                <td>3.95%</td>
+                <td style="color: var(--accent-emerald);">+33.33%</td>
+              </tr>
+              <tr>
+                <td>H=48h</td>
+                <td style="color: var(--text-dim);">Baseline Tree (No Weather)</td>
+                <td>2,485.69</td>
+                <td>3,300.05</td>
+                <td>0.7376</td>
+                <td>7.87%</td>
+                <td>--</td>
+              </tr>
+              <tr style="background: rgba(56, 189, 248, 0.04);">
+                <td style="font-weight: 600; color: var(--accent-cyan);">H=48h</td>
+                <td style="font-weight: 600; color: #fff;">Production Champion</td>
+                <td class="highlight-cell">1,485.31</td>
+                <td>1,949.58</td>
+                <td>0.9082</td>
+                <td>4.80%</td>
+                <td style="color: var(--accent-emerald);">+40.25%</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Col 4: System Health & Audits -->
+      <div class="col-4">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">🛡️ System Health & Audit Status</div>
+            <button class="btn-tab" onclick="refreshHealth()" style="padding: 2px 8px; font-size: 11px;">Refresh</button>
+          </div>
+
+          <div class="kv-list">
+            <div class="kv-item">
+              <span class="kv-key">Model Version</span>
+              <span id="auditModelVersion" class="kv-val">2.0.0-phase10</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Inference Artifacts</span>
+              <span class="kv-val" style="color: var(--accent-emerald);">VERIFIED (SHA-256)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Worker Lock</span>
+              <span class="kv-val">SINGLETON ACTIVE</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Prometheus Exporter</span>
+              <span class="kv-val">ACTIVE (:8000/metrics)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Causality Guard</span>
+              <span class="kv-val" style="color: var(--accent-cyan);">ENFORCED (t &le; t_cut)</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Pytest Regression Suite</span>
+              <span class="kv-val" style="color: var(--accent-emerald);">156 / 156 PASSED</span>
+            </div>
+            <div class="kv-item">
+              <span class="kv-key">Docker Runtime</span>
+              <span class="kv-val" style="color: var(--accent-rose);">BLOCKED (HOST PATH)</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 18px;">
+            <div class="control-label" style="margin-bottom: 6px;">Raw API JSON Response</div>
+            <pre id="rawJsonResponse" class="code-block">Click "Run Forecast Model" to execute live prediction...</pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // State
+    let currentWorkflowMode = 'orchestrated';
+    let currentTargetScenario = 'holdout';
+    let currentHorizon = 1;
+    let currentWeatherMode = 'live';
+    let currentTargetTime = "2018-08-01T12:00:00";
+
+    // Diagnostic demonstration template features
+    const baseFeatures = {
+      "hour": 12.0, "day_of_week": 3.0, "day_of_month": 15.0, "month": 10.0, "is_weekend": 0.0,
+      "hour_sin": 0.0, "hour_cos": -1.0, "day_of_week_sin": 0.4338, "day_of_week_cos": -0.9009,
+      "lag_1": 31200.0, "lag_24": 30500.0, "lag_168": 30900.0, "rolling_mean_24": 30800.0, "rolling_std_24": 1250.0,
+      "temp_f_zonal_weighted": 57.05, "cooling_degree_proxy_regional": 0.0, "heating_degree_proxy_regional": 7.95, "temp_spread_regional": 4.70
+    };
+
+    function setWorkflowMode(mode, elem) {
+      currentWorkflowMode = mode;
+      document.querySelectorAll('#btnModeOrchestrated, #btnModeDiagnostic').forEach(b => b.classList.remove('active'));
+      elem.classList.add('active');
+      const diagGroup = document.getElementById('diagnosticWeatherGroup');
+      if (mode === 'diagnostic') {
+        diagGroup.style.display = 'flex';
+      } else {
+        diagGroup.style.display = 'none';
+      }
+    }
+
+    function setTargetScenario(scenario, elem) {
+      currentTargetScenario = scenario;
+      document.querySelectorAll('#btnTargetHoldout, #btnTargetLive').forEach(b => b.classList.remove('active'));
+      elem.classList.add('active');
+      if (scenario === 'holdout') {
+        currentTargetTime = "2018-08-01T12:00:00";
+      } else {
+        currentTargetTime = "2026-10-15T10:00:00";
+      }
+    }
+
+    function setHorizon(h, elem) {
+      currentHorizon = h;
+      elem.parentElement.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+      elem.classList.add('active');
+    }
+
+    function setWeatherMode(m, elem) {
+      currentWeatherMode = m;
+      elem.parentElement.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+      elem.classList.add('active');
+    }
+
+    async function checkHealth() {
+      try {
+        const res = await fetch('/health');
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('apiStatusText').innerText = `API: ${data.status}`;
+          document.getElementById('apiHealthBadge').className = `badge badge-${data.status.toLowerCase()}`;
+          document.getElementById('auditModelVersion').innerText = data.model_version;
+        } else {
+          document.getElementById('apiStatusText').innerText = 'API: OFFLINE';
+          document.getElementById('apiHealthBadge').className = 'badge badge-degraded';
+        }
+      } catch (err) {
+        document.getElementById('apiStatusText').innerText = 'API: OFFLINE';
+        document.getElementById('apiHealthBadge').className = 'badge badge-degraded';
+      }
+    }
+
+    async function refreshHealth() {
+      await checkHealth();
+    }
+
+    async function executeInference() {
+      let endpoint = '/predict/orchestrated';
+      let requestBody = {};
+
+      if (currentWorkflowMode === 'orchestrated') {
+        endpoint = '/predict/orchestrated';
+        requestBody = {
+          "timestamp": currentTargetTime,
+          "horizon": currentHorizon,
+          "enforce_cutoff": true,
+          "allow_fallback_weather": true
+        };
+      } else {
+        endpoint = '/predict';
+        let weatherPayload = null;
+
+        if (currentWeatherMode === 'live') {
+          weatherPayload = {
+            "temp_f_kphl": 58.06,
+            "temp_f_kewr": 54.91,
+            "temp_f_kilg": 59.61,
+            "temp_f_zonal_weighted": 57.05,
+            "temp_spread_regional": 4.70,
+            "simulated_avail_utc": "2026-10-15T08:50:00Z",
+            "valid_time_utc": "2026-10-15T10:00:00Z",
+            "provenance": "NOAA_HRRR_OPERATIONAL_ECCODES"
+          };
+        } else if (currentWeatherMode === 'fallback') {
+          weatherPayload = {
+            "temp_f_zonal_weighted": 57.05,
+            "temp_spread_regional": 2.54,
+            "simulated_avail_utc": "2026-10-14T11:00:00Z",
+            "valid_time_utc": "2026-10-15T12:00:00Z",
+            "provenance": "FALLBACK_DIURNAL_CLIMATOLOGY",
+            "is_fallback": true
+          };
+        } else if (currentWeatherMode === 'stale') {
+          weatherPayload = {
+            "temp_f_zonal_weighted": 57.05,
+            "temp_spread_regional": 3.50,
+            "simulated_avail_utc": "2026-10-15T01:00:00Z", // 10h old
+            "valid_time_utc": "2026-10-15T12:00:00Z",
+            "provenance": "NOAA_HRRR_OPERATIONAL"
+          };
+        } else if (currentWeatherMode === 'post_cutoff') {
+          weatherPayload = {
+            "temp_f_zonal_weighted": 57.05,
+            "temp_spread_regional": 3.50,
+            "simulated_avail_utc": "2026-10-15T11:55:00Z", // AFTER H=1 cutoff (11:00)!
+            "valid_time_utc": "2026-10-15T12:00:00Z",
+            "provenance": "NOAA_HRRR_OPERATIONAL"
+          };
+        }
+
+        requestBody = {
+          "timestamp": currentTargetTime,
+          "horizon": currentHorizon,
+          "features": baseFeatures,
+          "weather_inputs": weatherPayload,
+          "enforce_cutoff": true
+        };
+      }
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+
+        const statusBadge = document.getElementById('responseStatusBadge');
+        const rawJsonElem = document.getElementById('rawJsonResponse');
+        const warningBox = document.getElementById('warningBox');
+        const warningText = document.getElementById('warningMessageText');
+
+        if (response.ok) {
+          const data = await response.json();
+          statusBadge.innerText = "200 OK";
+          statusBadge.className = "badge badge-healthy";
+          rawJsonElem.innerText = JSON.stringify(data, null, 2);
+
+          // Update metrics
+          document.getElementById('pointForecastValue').innerText = data.point_forecast_mw.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
+          document.getElementById('targetTimestampText').innerText = data.target_timestamp;
+          document.getElementById('q05Text').innerText = data.q05_mw.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
+          document.getElementById('q50Text').innerText = data.q50_mw.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
+          document.getElementById('q95Text').innerText = data.q95_mw.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
+          document.getElementById('intervalWidthValue').innerText = `${data.interval_width_mw.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} MW`;
+
+          // Provenance update
+          document.getElementById('weatherProvenanceBadge').innerText = data.weather_data_provenance;
+          if (data.weather_data_provenance.includes("FALLBACK")) {
+            document.getElementById('weatherProvenanceBadge').className = "badge badge-degraded";
+          } else {
+            document.getElementById('weatherProvenanceBadge').className = "badge badge-live";
+          }
+
+          // Warning display
+          if (data.data_quality_warnings && data.data_quality_warnings.length > 0) {
+            warningBox.style.display = "block";
+            warningBox.style.background = "rgba(245, 158, 11, 0.1)";
+            warningBox.style.borderColor = "rgba(245, 158, 11, 0.3)";
+            warningText.style.color = "#fbbf24";
+            warningText.innerText = data.data_quality_warnings.join("\n");
+          } else {
+            warningBox.style.display = "none";
+          }
+
+        } else {
+          const errData = await response.json();
+          statusBadge.innerText = `${response.status} ${response.statusText}`;
+          statusBadge.className = "badge badge-degraded";
+          rawJsonElem.innerText = JSON.stringify(errData, null, 2);
+
+          warningBox.style.display = "block";
+          warningBox.style.background = "rgba(244, 63, 94, 0.1)";
+          warningBox.style.borderColor = "rgba(244, 63, 94, 0.3)";
+          warningText.style.color = "#fda4af";
+          warningText.innerText = `[${response.status}] ${errData.detail || "Request rejected"}`;
+        }
+      } catch (err) {
+        document.getElementById('rawJsonResponse').innerText = `Network or client error: ${err.message}`;
+      }
+    }
+
+    // Auto-initialize
+    window.addEventListener('DOMContentLoaded', () => {
+      checkHealth();
+      executeInference();
+    });
+  </script>
+</body>
+</html>

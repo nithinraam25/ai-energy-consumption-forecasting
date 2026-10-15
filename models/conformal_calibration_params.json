@@ -1,0 +1,9 @@
+{
+  "nominal_coverage": 0.9,
+  "alpha": 0.09999999999999998,
+  "adjustment_factor_mw": 56.6965,
+  "calibration_sample_count": 21760,
+  "raw_calibration_coverage": 0.8797,
+  "calibrated_calibration_coverage": 0.9,
+  "epistemic_limitation": "Conformal coverage guarantees strictly assume exchangeability. Serial autocorrelation and seasonal distribution shifts in energy time-series yield approximate rather than exact marginal coverage on non-stationary test partitions."
+}

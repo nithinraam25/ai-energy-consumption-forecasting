@@ -1,0 +1,69 @@
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local configuration and environment variables
+.env
+.env.*
+!.env.example
+
+# Models: track approved model artifacts and schemas, preserve structure via .gitkeep
+models/*
+!models/.gitkeep
+!models/*.joblib
+!models/*.json
+
+# Data: exclude raw, processed, and simulated datasets, preserve structure
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+!data/processed/pjm_cleaned.csv
+data/simulated/*
+!data/simulated/.gitkeep
+
+# Outputs: exclude generated artifacts, preserve structure
+outputs/forecasts/*
+!outputs/forecasts/.gitkeep
+outputs/metrics/*
+!outputs/metrics/.gitkeep
+outputs/plots/*
+!outputs/plots/.gitkeep
+outputs/logs/*
+!outputs/logs/.gitkeep
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Scratch work and temporary experiment scripts
+scratch/
+
+# Raw NOAA weather downloads and temporary binary caches
+*.grib2
+*.idx
+data/weather_cache/*.grib2
+data/weather_cache/*.tmp
+
+# Operating system artifacts
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local IDE configuration and machine-specific files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.gemini/
+

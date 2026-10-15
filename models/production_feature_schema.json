@@ -1,0 +1,146 @@
+{
+  "model_version": "2.0.0-phase8",
+  "model_type": "EnergyTreeForecaster_HistGB",
+  "training_samples": 123311,
+  "test_holdout_samples": 21762,
+  "target_name": "target_next_hour",
+  "target_unit": "Megawatts (MW)",
+  "features": [
+    "hour",
+    "day_of_week",
+    "day_of_month",
+    "month",
+    "is_weekend",
+    "hour_sin",
+    "hour_cos",
+    "day_of_week_sin",
+    "day_of_week_cos",
+    "lag_1",
+    "lag_24",
+    "lag_168",
+    "rolling_mean_24",
+    "rolling_std_24",
+    "temp_f_zonal_weighted",
+    "cooling_degree_proxy_regional",
+    "heating_degree_proxy_regional",
+    "temp_spread_regional"
+  ],
+  "features_count": 18,
+  "forecast_origin_cutoff": "t_origin = T - 1h (t_avail <= t_origin)",
+  "stations_included": [
+    "KPHL",
+    "KEWR",
+    "KILG"
+  ],
+  "aggregation_method": "PJM East Zonal Load-Share Proxy (0.38*KPHL + 0.42*KEWR + 0.20*KILG)",
+  "feature_statistics": {
+    "hour": {
+      "mean": 11.5093,
+      "std": 6.9193,
+      "min": 0.0,
+      "max": 23.0
+    },
+    "day_of_week": {
+      "mean": 2.9984,
+      "std": 1.9984,
+      "min": 0.0,
+      "max": 6.0
+    },
+    "day_of_month": {
+      "mean": 15.7357,
+      "std": 8.7997,
+      "min": 1.0,
+      "max": 31.0
+    },
+    "month": {
+      "mean": 6.4913,
+      "std": 3.4622,
+      "min": 1.0,
+      "max": 12.0
+    },
+    "is_weekend": {
+      "mean": 0.2852,
+      "std": 0.4515,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "hour_sin": {
+      "mean": -0.0006,
+      "std": 0.7072,
+      "min": -1.0,
+      "max": 1.0
+    },
+    "hour_cos": {
+      "mean": -0.0009,
+      "std": 0.707,
+      "min": -1.0,
+      "max": 1.0
+    },
+    "day_of_week_sin": {
+      "mean": 0.0007,
+      "std": 0.7072,
+      "min": -0.9749,
+      "max": 0.9749
+    },
+    "day_of_week_cos": {
+      "mean": -0.001,
+      "std": 0.707,
+      "min": -0.901,
+      "max": 1.0
+    },
+    "lag_1": {
+      "mean": 32258.8184,
+      "std": 6453.6785,
+      "min": 14544.0,
+      "max": 62009.0
+    },
+    "lag_24": {
+      "mean": 32259.384,
+      "std": 6453.8754,
+      "min": 14544.0,
+      "max": 62009.0
+    },
+    "lag_168": {
+      "mean": 32262.037,
+      "std": 6453.258,
+      "min": 14544.0,
+      "max": 62009.0
+    },
+    "rolling_mean_24": {
+      "mean": 32256.8349,
+      "std": 4640.5293,
+      "min": 19307.4167,
+      "max": 52261.4167
+    },
+    "rolling_std_24": {
+      "mean": 4292.7472,
+      "std": 1609.2836,
+      "min": 1040.0079,
+      "max": 11014.8444
+    },
+    "temp_f_zonal_weighted": {
+      "mean": 57.1116,
+      "std": 18.4478,
+      "min": 1.3624,
+      "max": 105.8546
+    },
+    "cooling_degree_proxy_regional": {
+      "mean": 4.3251,
+      "std": 7.0455,
+      "min": 0.0,
+      "max": 40.8546
+    },
+    "heating_degree_proxy_regional": {
+      "mean": 12.2136,
+      "std": 13.6027,
+      "min": 0.0,
+      "max": 63.6376
+    },
+    "temp_spread_regional": {
+      "mean": 2.536,
+      "std": 1.2464,
+      "min": 0.0,
+      "max": 8.53
+    }
+  }
+}
