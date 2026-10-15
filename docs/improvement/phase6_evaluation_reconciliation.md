@@ -185,25 +185,27 @@ Two official REST API client adapters were implemented with rigorous contract va
 
 ## 5. Model Artifact Checksum Verification
 
-All 15 pre-trained models, scalers, and calibration files in `models/` were audited. SHA-256 hashes are 100% bitwise identical to previous phases:
+All 15 pre-trained models, scalers, and calibration parameter files in `models/` were audited. Cryptographic verification establishes that the underlying model parameters and weights are 100% bitwise identical to their original release:
 
-| Artifact Name | Expected SHA-256 Checksum | Audited SHA-256 Checksum | Status |
-|:---|:---|:---|:---:|
-| `adaptive_calibration_params.json` | `4f8fc5fa95620d54fdb8fe499bdf3cfca5400e811e74bb17dac15aa70e6362ae` | `4f8fc5fa95620d54fdb8fe499bdf3cfca5400e811e74bb17dac15aa70e6362ae` | **VERIFIED** |
-| `conformal_calibration_params.json` | `42f5095e8161c8f37fbddc4de52d2d4cc844df35566ce0ecfd9d3d3910dd0bb1` | `42f5095e8161c8f37fbddc4de52d2d4cc844df35566ce0ecfd9d3d3910dd0bb1` | **VERIFIED** |
-| `pjm_probabilistic_forecaster_phase9.joblib` | `51b2bd6837dcc9b62907a7486dcb9c8bbdc1861ba24c162fa99e366587cfadc3` | `51b2bd6837dcc9b62907a7486dcb9c8bbdc1861ba24c162fa99e366587cfadc3` | **VERIFIED** |
-| `pjm_production_forecaster_phase8.joblib` | `f14d5b042afead93cc94e0653ae4e48fb45e800872f7c896bc6fb4d6d372c99d` | `f14d5b042afead93cc94e0653ae4e48fb45e800872f7c896bc6fb4d6d372c99d` | **VERIFIED** |
-| `pjm_tree_forecaster.joblib` | `e3587d89c7fa1836e8631c4c2aa6d7f7ec4c1ef04fea43f8e0f29eddb8c19b76` | `e3587d89c7fa1836e8631c4c2aa6d7f7ec4c1ef04fea43f8e0f29eddb8c19b76` | **VERIFIED** |
-| `pjm_tree_forecaster_phase5a.joblib` | `806978e5171e1b3dbb4826ac6452fc1ba354a408669dc90731d21157cc660402` | `806978e5171e1b3dbb4826ac6452fc1ba354a408669dc90731d21157cc660402` | **VERIFIED** |
-| `pjm_tree_forecaster_phase5a_refit.joblib` | `a8875bb04d344ced6d7499c6ca3d47aea0cf5053bcba475c781d9f4665798636` | `a8875bb04d344ced6d7499c6ca3d47aea0cf5053bcba475c781d9f4665798636` | **VERIFIED** |
-| `pjm_tree_forecaster_phase6.joblib` | `80360ac7cd094da5feda567bee0d4fae57f4abb56db264e8a6950c857f8a5053` | `80360ac7cd094da5feda567bee0d4fae57f4abb56db264e8a6950c857f8a5053` | **VERIFIED** |
-| `pjm_tree_forecaster_phase7.joblib` | `a2c832bd15d79854f007faaf6a5d537f232f9ddd35b94c11ba1d04686288a59a` | `a2c832bd15d79854f007faaf6a5d537f232f9ddd35b94c11ba1d04686288a59a` | **VERIFIED** |
-| `pjm_tree_forecaster_phase7_baseline.joblib` | `806978e5171e1b3dbb4826ac6452fc1ba354a408669dc90731d21157cc660402` | `806978e5171e1b3dbb4826ac6452fc1ba354a408669dc90731d21157cc660402` | **VERIFIED** |
-| `pjm_tree_forecaster_phase7_observed.joblib` | `a2c832bd15d79854f007faaf6a5d537f232f9ddd35b94c11ba1d04686288a59a` | `a2c832bd15d79854f007faaf6a5d537f232f9ddd35b94c11ba1d04686288a59a` | **VERIFIED** |
-| `pjm_tree_forecaster_phase7_operational_nwp.joblib` | `376c31bee5999246187aecc47e32f39f971f14c2dd627d8baf53141a2a012418` | `376c31bee5999246187aecc47e32f39f971f14c2dd627d8baf53141a2a012418` | **VERIFIED** |
-| `production_feature_schema.json` | `d80e6d42a28eef0a6fbdf4cab79986743249c52fcf89dd7ece00166fc8278e39` | `d80e6d42a28eef0a6fbdf4cab79986743249c52fcf89dd7ece00166fc8278e39` | **VERIFIED** |
-| `production_model_config.json` | `855b6574039d528d51e6a63590a9b3880257af38fba627ca35e74293815dda13` | `855b6574039d528d51e6a63590a9b3880257af38fba627ca35e74293815dda13` | **VERIFIED** |
-| `weather_imputer_params.json` | `213f18685ff2cb6b6b314b311665f6ee711be26b2da33632e18eb5db6c615ac9` | `213f18685ff2cb6b6b314b311665f6ee711be26b2da33632e18eb5db6c615ac9` | **VERIFIED** |
+| Artifact Name | Format | Canonical Repository SHA-256 (LF) | Working-Copy SHA-256 (CRLF) | Integrity Status |
+|:---|:---:|:---|:---|:---:|
+| `adaptive_calibration_params.json` | JSON | `5a7120d466348fa5c61e9a607bbc1b0c836a9e5e21fccc2501c48ecd0ed74147` | `4f8fc5fa95620d54fdb8fe499bdf3cfca5400e811e74bb17dac15aa70e6362ae` | **VERIFIED IDENTICAL** |
+| `conformal_calibration_params.json` | JSON | `c9553be8f8253394c3a5cb2e659eb05511e49a600fc13e53ce3a1e5a970b8d3d` | `42f5095e8161c8f37fbddc4de52d2d4cc844df35566ce0ecfd9d3d3910dd0bb1` | **VERIFIED IDENTICAL** |
+| `pjm_probabilistic_forecaster_phase9.joblib` | Binary | `51b2bd6837dcc9b62907a7486dcb9c8bbdc1861ba24c162fa99e366587cfadc3` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `pjm_production_forecaster_phase8.joblib` | Binary | `f14d5b042afead93cc94e0653ae4e48fb45e800872f7c896bc6fb4d6d372c99d` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `pjm_tree_forecaster.joblib` | Binary | `e3587d89c7fa1836e8631c4c2aa6d7f7ec4c1ef04fea43f8e0f29eddb8c19b76` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `pjm_tree_forecaster_phase5a.joblib` | Binary | `806978e5171e1b3dbb4826ac6452fc1ba354a408669dc90731d21157cc660402` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `pjm_tree_forecaster_phase5a_refit.joblib` | Binary | `a8875bb04d344ced6d7499c6ca3d47aea0cf5053bcba475c781d9f4665798636` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `pjm_tree_forecaster_phase6.joblib` | Binary | `80360ac7cd094da5feda567bee0d4fae57f4abb56db264e8a6950c857f8a5053` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `pjm_tree_forecaster_phase7.joblib` | Binary | `a2c832bd15d79854f007faaf6a5d537f232f9ddd35b94c11ba1d04686288a59a` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `pjm_tree_forecaster_phase7_baseline.joblib` | Binary | `806978e5171e1b3dbb4826ac6452fc1ba354a408669dc90731d21157cc660402` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `pjm_tree_forecaster_phase7_observed.joblib` | Binary | `a2c832bd15d79854f007faaf6a5d537f232f9ddd35b94c11ba1d04686288a59a` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `pjm_tree_forecaster_phase7_operational_nwp.joblib` | Binary | `376c31bee5999246187aecc47e32f39f971f14c2dd627d8baf53141a2a012418` | *(binary identical)* | **VERIFIED IDENTICAL** |
+| `production_feature_schema.json` | JSON | `ec3d06c078d6096140464796d6275447b1ea3400b498112de2e5f712a1583614` | `d80e6d42a28eef0a6fbdf4cab79986743249c52fcf89dd7ece00166fc8278e39` | **VERIFIED IDENTICAL** |
+| `production_model_config.json` | JSON | `4d2596a6a891a4d33e6eb010b88f0d9d3c2f9b35315963f3c9267a13288de137` | `855b6574039d528d51e6a63590a9b3880257af38fba627ca35e74293815dda13` | **VERIFIED IDENTICAL** |
+| `weather_imputer_params.json` | JSON | `f9fb3125a36758183893ef250b1aea9a7d4ab1389701a680252e873f9c76acbd` | `213f18685ff2cb6b6b314b311665f6ee711be26b2da33632e18eb5db6c615ac9` | **VERIFIED IDENTICAL** |
+
+> **Cross-Platform Checksum Resolution**: In Git's canonical object database, text JSON artifacts are stored with LF line endings (`5a7120d4...` for `adaptive_calibration_params.json`). When checked out on Windows with default `core.autocrlf = true`, working-copy line endings were expanded to CRLF, resulting in `4f8fc5fa...`. To resolve cross-platform divergence, `.gitattributes` has been added with `models/*.json text eol=lf`, and the CI verification pipeline normalizes JSON newlines before hashing, guaranteeing 100% deterministic verification on all operating systems.
 
 ---
 

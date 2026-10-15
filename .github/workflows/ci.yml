@@ -38,8 +38,8 @@ jobs:
           from pathlib import Path
           
           expected_hashes = {
-              'adaptive_calibration_params.json': '4f8fc5fa95620d54fdb8fe499bdf3cfca5400e811e74bb17dac15aa70e6362ae',
-              'conformal_calibration_params.json': '42f5095e8161c8f37fbddc4de52d2d4cc844df35566ce0ecfd9d3d3910dd0bb1',
+              'adaptive_calibration_params.json': '5a7120d466348fa5c61e9a607bbc1b0c836a9e5e21fccc2501c48ecd0ed74147',
+              'conformal_calibration_params.json': 'c9553be8f8253394c3a5cb2e659eb05511e49a600fc13e53ce3a1e5a970b8d3d',
               'pjm_probabilistic_forecaster_phase9.joblib': '51b2bd6837dcc9b62907a7486dcb9c8bbdc1861ba24c162fa99e366587cfadc3',
               'pjm_production_forecaster_phase8.joblib': 'f14d5b042afead93cc94e0653ae4e48fb45e800872f7c896bc6fb4d6d372c99d',
               'pjm_tree_forecaster.joblib': 'e3587d89c7fa1836e8631c4c2aa6d7f7ec4c1ef04fea43f8e0f29eddb8c19b76',
@@ -50,15 +50,18 @@ jobs:
               'pjm_tree_forecaster_phase7_baseline.joblib': '806978e5171e1b3dbb4826ac6452fc1ba354a408669dc90731d21157cc660402',
               'pjm_tree_forecaster_phase7_observed.joblib': 'a2c832bd15d79854f007faaf6a5d537f232f9ddd35b94c11ba1d04686288a59a',
               'pjm_tree_forecaster_phase7_operational_nwp.joblib': '376c31bee5999246187aecc47e32f39f971f14c2dd627d8baf53141a2a012418',
-              'production_feature_schema.json': 'd80e6d42a28eef0a6fbdf4cab79986743249c52fcf89dd7ece00166fc8278e39',
-              'production_model_config.json': '855b6574039d528d51e6a63590a9b3880257af38fba627ca35e74293815dda13',
-              'weather_imputer_params.json': '213f18685ff2cb6b6b314b311665f6ee711be26b2da33632e18eb5db6c615ac9'
+              'production_feature_schema.json': 'ec3d06c078d6096140464796d6275447b1ea3400b498112de2e5f712a1583614',
+              'production_model_config.json': '4d2596a6a891a4d33e6eb010b88f0d9d3c2f9b35315963f3c9267a13288de137',
+              'weather_imputer_params.json': 'f9fb3125a36758183893ef250b1aea9a7d4ab1389701a680252e873f9c76acbd'
           }
           models_dir = Path('models')
           for name, exp_hash in expected_hashes.items():
               p = models_dir / name
               assert p.is_file(), f'Artifact missing: {name}'
-              actual_hash = hashlib.sha256(p.read_bytes()).hexdigest()
+              raw = p.read_bytes()
+              if name.endswith('.json'):
+                  raw = raw.replace(b'\r\n', b'\n')
+              actual_hash = hashlib.sha256(raw).hexdigest()
               assert actual_hash == exp_hash, f'Checksum mismatch for {name}: expected {exp_hash}, got {actual_hash}'
           print('All 15 model artifact SHA-256 checksums verified successfully.')
           "

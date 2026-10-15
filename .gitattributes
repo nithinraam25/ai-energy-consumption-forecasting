@@ -1,0 +1,6 @@
+# Ensure deterministic, cross-platform LF line endings for JSON model artifacts and binary integrity
+* text=auto
+models/*.json text eol=lf
+models/*.joblib binary
+*.sh text eol=lf
+
