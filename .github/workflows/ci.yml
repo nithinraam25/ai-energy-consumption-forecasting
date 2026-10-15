@@ -1,0 +1,107 @@
+name: CI & Deployment Validation
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test-and-validate:
+    name: Test, Validate Artifacts, and Build Container
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install System Dependencies (ecCodes C-Library)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libeccodes-dev libeccodes-tools curl
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify Model Artifact Checksums (SHA-256)
+        run: |
+          python -c "
+          import hashlib
+          from pathlib import Path
+          
+          expected_hashes = {
+              'adaptive_calibration_params.json': '4f8fc5fa95620d54fdb8fe499bdf3cfca5400e811e74bb17dac15aa70e6362ae',
+              'conformal_calibration_params.json': '42f5095e8161c8f37fbddc4de52d2d4cc844df35566ce0ecfd9d3d3910dd0bb1',
+              'pjm_probabilistic_forecaster_phase9.joblib': '51b2bd6837dcc9b62907a7486dcb9c8bbdc1861ba24c162fa99e366587cfadc3',
+              'pjm_production_forecaster_phase8.joblib': 'f14d5b042afead93cc94e0653ae4e48fb45e800872f7c896bc6fb4d6d372c99d',
+              'pjm_tree_forecaster.joblib': 'e3587d89c7fa1836e8631c4c2aa6d7f7ec4c1ef04fea43f8e0f29eddb8c19b76',
+              'pjm_tree_forecaster_phase5a.joblib': '806978e5171e1b3dbb4826ac6452fc1ba354a408669dc90731d21157cc660402',
+              'pjm_tree_forecaster_phase5a_refit.joblib': 'a8875bb04d344ced6d7499c6ca3d47aea0cf5053bcba475c781d9f4665798636',
+              'pjm_tree_forecaster_phase6.joblib': '80360ac7cd094da5feda567bee0d4fae57f4abb56db264e8a6950c857f8a5053',
+              'pjm_tree_forecaster_phase7.joblib': 'a2c832bd15d79854f007faaf6a5d537f232f9ddd35b94c11ba1d04686288a59a',
+              'pjm_tree_forecaster_phase7_baseline.joblib': '806978e5171e1b3dbb4826ac6452fc1ba354a408669dc90731d21157cc660402',
+              'pjm_tree_forecaster_phase7_observed.joblib': 'a2c832bd15d79854f007faaf6a5d537f232f9ddd35b94c11ba1d04686288a59a',
+              'pjm_tree_forecaster_phase7_operational_nwp.joblib': '376c31bee5999246187aecc47e32f39f971f14c2dd627d8baf53141a2a012418',
+              'production_feature_schema.json': 'd80e6d42a28eef0a6fbdf4cab79986743249c52fcf89dd7ece00166fc8278e39',
+              'production_model_config.json': '855b6574039d528d51e6a63590a9b3880257af38fba627ca35e74293815dda13',
+              'weather_imputer_params.json': '213f18685ff2cb6b6b314b311665f6ee711be26b2da33632e18eb5db6c615ac9'
+          }
+          models_dir = Path('models')
+          for name, exp_hash in expected_hashes.items():
+              p = models_dir / name
+              assert p.is_file(), f'Artifact missing: {name}'
+              actual_hash = hashlib.sha256(p.read_bytes()).hexdigest()
+              assert actual_hash == exp_hash, f'Checksum mismatch for {name}: expected {exp_hash}, got {actual_hash}'
+          print('All 15 model artifact SHA-256 checksums verified successfully.')
+          "
+
+      - name: Run Full Automated Test Suite
+        run: |
+          python -m pytest tests/ -v
+
+      - name: Verify Evaluation Pipeline Reproducibility
+        run: |
+          python -m src.evaluation.evaluate_accuracy
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Production Docker Image
+        run: |
+          docker build -t ai-energy-consumption-forecaster:latest .
+
+      - name: Test Docker Container Execution & Endpoints
+        run: |
+          docker run -d --name forecaster-app -p 8000:8000 ai-energy-consumption-forecaster:latest
+          
+          # Poll until server is ready (up to 30 seconds)
+          for i in {1..30}; do
+            if curl -s -f http://localhost:8000/health | grep -q '"status":"HEALTHY"'; then
+              echo "FastAPI application inside Docker container is HEALTHY!"
+              break
+            fi
+            echo "Waiting for container server readiness... ($i/30)"
+            sleep 1
+          done
+
+          # Test health endpoint
+          curl -f -s http://localhost:8000/health | grep '"status":"HEALTHY"'
+
+          # Test dashboard endpoint
+          curl -f -s http://localhost:8000/dashboard | grep 'PJM East AI Energy Forecasting Dashboard'
+
+          # Test evaluation metrics endpoint
+          curl -f -s http://localhost:8000/api/evaluation/metrics | grep '"test_sample_count":21773'
+
+          # Cleanup
+          docker stop forecaster-app
+          docker rm forecaster-app
+          echo "Docker container verification completed successfully."

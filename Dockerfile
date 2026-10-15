@@ -28,10 +28,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy source code, configurations, model artifacts, and feature schemas
+# Copy source code, configurations, model artifacts, and evaluation outputs
 COPY src/ ./src/
 COPY models/ ./models/
 COPY data/processed/ ./data/processed/
+COPY outputs/improvement/ ./outputs/improvement/
 
 
 # Create a non-privileged user and switch permissions

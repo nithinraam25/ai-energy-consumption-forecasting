@@ -175,6 +175,7 @@ For complete architectural specifications, mathematical formulations, and valida
 - [Phase 14: Final System Demonstration, Dashboard, & Handoff](docs/phase14_final_demo_and_handoff.md)
 - [Phase 3: Dashboard Improvements, Visualization, & Operational Readiness](docs/improvement/dashboard_and_operational_readiness.md)
 - [Phase 4: Forecast Reliability, Data Integrity, & Deployment Report](docs/improvement/phase4_reliability_and_deployment_report.md)
+- [Phase 5: Scientific Validation and Real-Time Data Integration](docs/improvement/phase5_scientific_validation_and_data_integration.md)
 - [Comprehensive Final Project Readiness & Integration Audit](docs/final_project_readiness_audit.md)
 - [Execution & Validation Log](docs/execution_and_validation_log.md)
 
