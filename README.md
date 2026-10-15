@@ -98,6 +98,56 @@ Because real-time SCADA demand telemetry is not connected (demand archive ends 2
 2. Select **2026-10-15 (Live HRRR Cycle)** and **Cached HRRR (f02)**.
 3. Click **Run Forecast Model** to evaluate the model using genuine 2026 HRRR forecasts and template demand features.
 
+---
+
+## 🖥️ Operational Dashboard Screenshots & Interface Preview
+
+The system features an interactive, production-grade operational dashboard accessible at `http://localhost:8000/dashboard`:
+
+### 1. Dashboard Overview & Workflow Controls
+Full-featured control strip providing seamless switching between **⚡ Automated Orchestration** and **🧪 Diagnostic / Template Mode**, interactive scenario selection (**2018-08-01 Historical Holdout** vs. **2026-10-15 Live HRRR Cycle**), and forecast horizon selection ($H=1\text{h}$, $H=24\text{h}$, $H=48\text{h}$):
+
+![Dashboard Overview](docs/demo_assets/screenshots/dashboard_overview.png)
+
+---
+
+### 2. Live NOAA HRRR Forecast with Conformal Prediction Intervals ($H=1\text{h}$)
+Demonstrates live operational inference on a genuine 2026 NOAA HRRR numerical weather prediction cycle ($t_{\text{init}} = \text{08:00 UTC}, f02$ lead) decoded via ECMWF `ecCodes 2.50.0`. Displays point prediction ($31,255.7\text{ MW}$), adaptive diurnal conformal bounds ($Q_{05} = 30,452.3\text{ MW}$, $Q_{95} = 33,222.3\text{ MW}$, width $2,769.9\text{ MW}$), and tri-station meteorological provenance across KPHL, KEWR, and KILG:
+
+![Live NOAA HRRR Forecast (H=1h)](docs/demo_assets/screenshots/dashboard_live_forecast_h1.png)
+
+---
+
+### 3. Retrospective Historical Holdout Evaluation ($H=1\text{h}$)
+Demonstrates automated retrospective forecasting on the verified PJM East demand archive ($40,822.3\text{ MW}$) using diurnal climatology fallback weather ($75.20^\circ\text{F}$ regional composite) and strict causality validation:
+
+![Historical Holdout Forecast (H=1h)](docs/demo_assets/screenshots/dashboard_historical_archive_h1.png)
+
+---
+
+### 4. Strict Causality Guard & Lookahead Leakage Prevention ($H=24\text{h}$ & $H=48\text{h}$)
+The ingestion engine strictly validates that weather forecast availability does not exceed the forecast origin decision cutoff ($t_{\text{avail}} \le T - H$). When post-cutoff weather is supplied, the causality guard immediately rejects the request with `400 Bad Request (CAUSALITY VIOLATION)`:
+
+| Horizon $H=24\text{h}$ Causality Rejection | Horizon $H=48\text{h}$ Causality Rejection |
+|:---:|:---:|
+| ![Causality Guard H=24h](docs/demo_assets/screenshots/dashboard_causality_guard_h24.png) | ![Causality Guard H=48h](docs/demo_assets/screenshots/dashboard_causality_guard_h48.png) |
+
+---
+
+### 5. Multi-Horizon Benchmarking View (Held-Out Test Set $N = 21,773$)
+Interactive benchmark comparison comparing the Production NWP model against Persistence, Daily Seasonal Naive, Weekly Seasonal Naive, and No-Weather Baseline Tree across all three horizons ($H=1\text{h}$, $H=24\text{h}$, $H=48\text{h}$):
+
+![Multi-Horizon Benchmarking](docs/demo_assets/screenshots/dashboard_benchmarking.png)
+
+---
+
+### 6. Publication-Grade Diagnostic Plot Gallery Tab
+Serves high-resolution (200 DPI) publication evaluation charts directly through the REST API (`GET /api/evaluation/plots/{filename}`) with full-screen zoom and scientific notes:
+
+![Publication Plot Gallery](docs/demo_assets/screenshots/dashboard_publication_plot_gallery.png)
+
+---
+
 ### 7. Run Weather Update Worker Daemon
 ```bash
 python -m src.weather.worker

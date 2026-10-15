@@ -28,6 +28,7 @@ Welcome to the technical documentation repository for the **AI-Powered Energy Co
 | [phase14_final_demo_and_handoff.md](file:///c:/Users/nithi/OneDrive/Desktop/AI%20Powered%20Energy%20Consumption%20Forcasting/AI-Powered%20Energy%20Consumption%20Forecasting/docs/phase14_final_demo_and_handoff.md) | Phase 14 interactive dashboard architecture, 10-step demonstration workflow, cryptographic verification, and project handoff package. |
 | [final_project_readiness_audit.md](file:///c:/Users/nithi/OneDrive/Desktop/AI%20Powered%20Energy%20Consumption%20Forcasting/AI-Powered%20Energy%20Consumption%20Forecasting/docs/final_project_readiness_audit.md) | Final independent verification audit across Phases 1–14, dashboard inspection, end-to-end integration trace, scientific claims audit, and deployment readiness verdict. |
 | [execution_and_validation_log.md](file:///c:/Users/nithi/OneDrive/Desktop/AI%20Powered%20Energy%20Consumption%20Forcasting/AI-Powered%20Energy%20Consumption%20Forecasting/docs/execution_and_validation_log.md) | Chronological implementation record, milestone tracking, and step-by-step verification commands. |
+| [demo_assets/screenshots/](file:///c:/Users/nithi/OneDrive/Desktop/AI%20Powered%20Energy%20Consumption%20Forcasting/AI-Powered%20Energy%20Consumption%20Forecasting/docs/demo_assets/screenshots) | Visual verification screenshots: live NOAA HRRR inference, causality guard enforcement, and publication plot gallery. |
 
 ---
 
