@@ -672,7 +672,8 @@ def get_evaluation_plot(filename: str):
         "multi_horizon_mae_comparison.png",
         "residual_distribution_h1.png",
     }
-    if filename not in allowed_plots:
+    # Security check: disallow path separators and non-whitelisted names
+    if "/" in filename or "\\" in filename or ".." in filename or filename not in allowed_plots:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Plot '{filename}' not found.")
 
     file_path = PLOTS_DIR_PATH / filename
@@ -688,6 +689,19 @@ def get_backtest_samples(horizon: int = 1, limit: int = 168) -> dict[str, Any]:
     Returns real predictions and actual demand observations from the held-out test partition.
     """
     global _cached_backtest_df
+
+    if horizon not in (1, 24, 48):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid horizon: {horizon}. Must be one of (1, 24, 48).",
+        )
+
+    if limit < 1 or limit > 500:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid limit: {limit}. Must be between 1 and 500.",
+        )
+
     if not PREDICTIONS_CSV_PATH.is_file():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -737,4 +751,13 @@ def get_backtest_samples(horizon: int = 1, limit: int = 168) -> dict[str, Any]:
         raise
     except Exception as exc:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed loading backtest samples: {exc}")
+
+
+@app.get("/api/operational/demand_readiness")
+def get_operational_demand_readiness(target_timestamp: str, horizon: int = 1) -> dict[str, Any]:
+    """Check whether operational demand telemetry is available to execute an automated forecast."""
+    from src.data.demand_contract import check_operational_demand_readiness
+    readiness = check_operational_demand_readiness(target_timestamp=target_timestamp, horizon=horizon)
+    return readiness.to_dict()
+
 

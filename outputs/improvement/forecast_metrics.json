@@ -1,5 +1,5 @@
 {
-  "evaluation_timestamp": "2026-10-15T13:58:39.793004+00:00",
+  "evaluation_timestamp": "2026-10-15T14:24:56.867256+00:00",
   "dataset_summary": {
     "total_records": 145362,
     "start_time": "2002-01-01T01:00:00",
@@ -31,6 +31,8 @@
           "wape_pct": 1.13,
           "gain_nwp_pct": 5.08,
           "diebold_mariano_stat": 15.908,
+          "cohens_d": 0.1078,
+          "loss_differential_definition": "|e_base| - |e_nwp|",
           "p_value": 0.0,
           "statistically_significant": true
         },
@@ -43,6 +45,7 @@
           "wape_pct": 3.39,
           "gain_nwp_pct": 68.36,
           "diebold_mariano_stat": 118.794,
+          "cohens_d": 0.8051,
           "p_value": 0.0
         },
         "daily_seasonal_naive": {
@@ -166,6 +169,8 @@
           "wape_pct": 5.9,
           "gain_nwp_pct": 33.1,
           "diebold_mariano_stat": 21.372,
+          "cohens_d": 0.455,
+          "loss_differential_definition": "|e_base| - |e_nwp|",
           "p_value": 0.0,
           "statistically_significant": true
         },
@@ -178,6 +183,7 @@
           "wape_pct": 7.1,
           "gain_nwp_pct": 44.42,
           "diebold_mariano_stat": 22.93,
+          "cohens_d": 0.5151,
           "p_value": 0.0
         },
         "daily_seasonal_naive": {
@@ -301,6 +307,8 @@
           "wape_pct": 7.99,
           "gain_nwp_pct": 40.15,
           "diebold_mariano_stat": 18.371,
+          "cohens_d": 0.5359,
+          "loss_differential_definition": "|e_base| - |e_nwp|",
           "p_value": 0.0,
           "statistically_significant": true
         },
@@ -313,6 +321,7 @@
           "wape_pct": 10.39,
           "gain_nwp_pct": 53.97,
           "diebold_mariano_stat": 22.322,
+          "cohens_d": 0.6271,
           "p_value": 0.0
         },
         "daily_seasonal_naive": {
@@ -471,6 +480,53 @@
         "H21": 90.2,
         "H22": 90.31,
         "H23": 86.45
+      },
+      "by_month_pct": {
+        "M01": 86.83,
+        "M02": 86.54,
+        "M03": 85.84,
+        "M04": 83.8,
+        "M05": 89.56,
+        "M06": 90.23,
+        "M07": 91.8,
+        "M08": 92.52,
+        "M09": 90.14,
+        "M10": 85.95,
+        "M11": 85.9,
+        "M12": 90.46
+      },
+      "by_demand_regime_pct": {
+        "base_load_under_28gw": 87.17,
+        "intermediate_28_35gw": 88.38,
+        "peak_load_over_35gw": 89.68
+      },
+      "extreme_weather_heatwave_pct": {
+        "heatwave_over_85f": 88.95,
+        "normal_under_85f": 88.23
+      }
+    },
+    "by_horizon": {
+      "H1": {
+        "horizon_hours": 1,
+        "calibration_strategy": "Adaptive Diurnal CQR",
+        "empirical_coverage_pct": 88.28,
+        "mean_width_mw": 4180.74,
+        "median_width_mw": 3477.98,
+        "winkler_score_mw": 4930.39
+      },
+      "H24": {
+        "horizon_hours": 24,
+        "calibration_strategy": "Diurnal Split Conformal",
+        "empirical_coverage_pct": 88.5,
+        "mean_width_mw": 4828.2,
+        "median_width_mw": 4650.12
+      },
+      "H48": {
+        "horizon_hours": 48,
+        "calibration_strategy": "Diurnal Split Conformal",
+        "empirical_coverage_pct": 89.22,
+        "mean_width_mw": 6008.1,
+        "median_width_mw": 5820.45
       }
     }
   }

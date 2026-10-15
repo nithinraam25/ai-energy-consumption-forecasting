@@ -73,6 +73,7 @@ Available Endpoints & Interfaces:
 - `GET  /api/evaluation/metrics`: Machine-readable Phase 2 & 3 benchmark metrics report.
 - `GET  /api/evaluation/plots/{filename}`: High-resolution (200 DPI) publication-grade diagnostic plots.
 - `GET  /api/evaluation/backtest_samples`: Genuine backtest predictions and actual demand observations for interactive plotting.
+- `GET  /api/operational/demand_readiness`: Evaluates whether continuous SCADA demand telemetry exists up to the decision cutoff.
 - `POST /predict`: Dual-mode forecast endpoint — accepts manual `features` dictionary (diagnostic mode) or automatically orchestrates cached weather and demand lags if `features` is omitted.
 - `POST /predict/orchestrated`: Dedicated automated forecast orchestration endpoint requiring only `timestamp` and `horizon`.
 - `POST /audit`: Operational data quality, causality, staleness, and drift gate.
@@ -173,6 +174,7 @@ For complete architectural specifications, mathematical formulations, and valida
 - [Phase 13: End-to-End Forecasting Validation & Scientific Audit](docs/phase13_end_to_end_forecast_validation.md)
 - [Phase 14: Final System Demonstration, Dashboard, & Handoff](docs/phase14_final_demo_and_handoff.md)
 - [Phase 3: Dashboard Improvements, Visualization, & Operational Readiness](docs/improvement/dashboard_and_operational_readiness.md)
+- [Phase 4: Forecast Reliability, Data Integrity, & Deployment Report](docs/improvement/phase4_reliability_and_deployment_report.md)
 - [Comprehensive Final Project Readiness & Integration Audit](docs/final_project_readiness_audit.md)
 - [Execution & Validation Log](docs/execution_and_validation_log.md)
 
