@@ -40,7 +40,7 @@ from src.weather.service import (
     WeatherUnavailableError,
     WeatherCausalityError,
 )
-from src.config import MODELS_DIR
+from src.config import MODELS_DIR, OUTPUTS_DIR
 from src.models.inference import (
     EnergyInferenceEngine,
     DEFAULT_PRODUCTION_MODEL_PATH,
@@ -630,3 +630,111 @@ def audit_input_batch(payload: AuditRequest) -> AuditResponse:
         distribution_drift_alerts=[],
         audit_timestamp_utc=datetime.now(timezone.utc),
     )
+
+
+# -----------------------------------------------------------------------------
+# Phase 3: Genuine Evaluation Metrics, Plots & Backtest Data Endpoints
+# -----------------------------------------------------------------------------
+IMPROVEMENT_DIR = OUTPUTS_DIR / "improvement"
+METRICS_JSON_PATH = IMPROVEMENT_DIR / "forecast_metrics.json"
+PREDICTIONS_CSV_PATH = IMPROVEMENT_DIR / "forecast_predictions.csv"
+PLOTS_DIR_PATH = IMPROVEMENT_DIR / "plots"
+
+_cached_backtest_df: pd.DataFrame | None = None
+
+
+@app.get("/api/evaluation/metrics")
+def get_evaluation_metrics() -> dict[str, Any]:
+    """Retrieve machine-readable Phase 2 evaluation benchmark metrics."""
+    if not METRICS_JSON_PATH.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evaluation metrics artifact not found. Run python -m src.evaluation.evaluate_accuracy first.",
+        )
+    try:
+        import json
+        with open(METRICS_JSON_PATH, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed to read metrics: {exc}")
+
+
+@app.get("/api/evaluation/plots/{filename}")
+def get_evaluation_plot(filename: str):
+    """Serve genuine publication-grade evaluation diagnostic charts."""
+    allowed_plots = {
+        "actual_vs_predicted_h1.png",
+        "actual_vs_predicted_h24.png",
+        "actual_vs_predicted_h48.png",
+        "forecast_error_distribution.png",
+        "horizon_metric_comparison.png",
+        "prediction_intervals.png",
+        "multi_horizon_mae_comparison.png",
+        "residual_distribution_h1.png",
+    }
+    if filename not in allowed_plots:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Plot '{filename}' not found.")
+
+    file_path = PLOTS_DIR_PATH / filename
+    if not file_path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Plot file '{filename}' does not exist on disk.")
+    return FileResponse(file_path, media_type="image/png")
+
+
+@app.get("/api/evaluation/backtest_samples")
+def get_backtest_samples(horizon: int = 1, limit: int = 168) -> dict[str, Any]:
+    """Retrieve genuine historical backtest evaluation samples for dashboard plotting.
+
+    Returns real predictions and actual demand observations from the held-out test partition.
+    """
+    global _cached_backtest_df
+    if not PREDICTIONS_CSV_PATH.is_file():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Predictions CSV artifact not found. Run evaluation first.",
+        )
+
+    try:
+        if _cached_backtest_df is None:
+            _cached_backtest_df = pd.read_csv(PREDICTIONS_CSV_PATH)
+
+        df_sub = _cached_backtest_df[_cached_backtest_df["horizon"] == horizon].copy()
+        if df_sub.empty:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"No samples for horizon {horizon}")
+
+        df_sub["target_timestamp"] = pd.to_datetime(df_sub["target_timestamp"])
+        summer_window = df_sub[(df_sub["target_timestamp"] >= "2018-07-01") & (df_sub["target_timestamp"] <= "2018-07-15")]
+        if len(summer_window) >= min(limit, 100):
+            samples_df = summer_window.head(limit)
+        else:
+            samples_df = df_sub.tail(limit)
+
+        records = []
+        for _, row in samples_df.iterrows():
+            record = {
+                "target_timestamp": str(row["target_timestamp"]),
+                "actual_demand_mw": float(row["actual_demand_mw"]) if pd.notna(row["actual_demand_mw"]) else None,
+                "pred_nwp_mw": float(row["pred_nwp_mw"]) if pd.notna(row["pred_nwp_mw"]) else None,
+                "pred_base_mw": float(row["pred_base_mw"]) if pd.notna(row["pred_base_mw"]) else None,
+                "pred_pers_mw": float(row["pred_pers_mw"]) if pd.notna(row["pred_pers_mw"]) else None,
+                "residual_mw": float(row["residual_mw"]) if pd.notna(row["residual_mw"]) else None,
+            }
+            if "q05_adaptive_mw" in row and pd.notna(row["q05_adaptive_mw"]):
+                record["q05_adaptive_mw"] = float(row["q05_adaptive_mw"])
+                record["q50_median_mw"] = float(row["q50_median_mw"])
+                record["q95_adaptive_mw"] = float(row["q95_adaptive_mw"])
+                record["interval_width_mw"] = float(row["interval_width_mw"])
+                record["inside_interval"] = bool(row["inside_interval"])
+            records.append(record)
+
+        return {
+            "horizon": horizon,
+            "sample_count": len(records),
+            "evaluation_period": f"{records[0]['target_timestamp']} to {records[-1]['target_timestamp']}",
+            "samples": records,
+        }
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Failed loading backtest samples: {exc}")
+

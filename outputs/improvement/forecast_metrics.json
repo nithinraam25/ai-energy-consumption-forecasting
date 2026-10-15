@@ -1,5 +1,5 @@
 {
-  "evaluation_timestamp": "2026-10-15T13:44:07.541873+00:00",
+  "evaluation_timestamp": "2026-10-15T13:58:39.793004+00:00",
   "dataset_summary": {
     "total_records": 145362,
     "start_time": "2002-01-01T01:00:00",
@@ -165,7 +165,7 @@
           "mape_pct": 5.8,
           "wape_pct": 5.9,
           "gain_nwp_pct": 33.1,
-          "diebold_mariano_stat": 17.857,
+          "diebold_mariano_stat": 21.372,
           "p_value": 0.0,
           "statistically_significant": true
         },
@@ -177,7 +177,7 @@
           "mape_pct": 7.02,
           "wape_pct": 7.1,
           "gain_nwp_pct": 44.42,
-          "diebold_mariano_stat": 19.94,
+          "diebold_mariano_stat": 22.93,
           "p_value": 0.0
         },
         "daily_seasonal_naive": {
@@ -195,7 +195,7 @@
           "r2": 0.4594,
           "mape_pct": 10.7,
           "wape_pct": 11.05,
-          "diebold_mariano_stat": 19.31,
+          "diebold_mariano_stat": 25.549,
           "p_value": 0.0
         }
       },
@@ -300,7 +300,7 @@
           "mape_pct": 7.88,
           "wape_pct": 7.99,
           "gain_nwp_pct": 40.15,
-          "diebold_mariano_stat": 15.1,
+          "diebold_mariano_stat": 18.371,
           "p_value": 0.0,
           "statistically_significant": true
         },
@@ -312,7 +312,7 @@
           "mape_pct": 10.36,
           "wape_pct": 10.39,
           "gain_nwp_pct": 53.97,
-          "diebold_mariano_stat": 19.645,
+          "diebold_mariano_stat": 22.322,
           "p_value": 0.0
         },
         "daily_seasonal_naive": {
@@ -330,7 +330,7 @@
           "r2": 0.4593,
           "mape_pct": 10.71,
           "wape_pct": 11.05,
-          "diebold_mariano_stat": 14.481,
+          "diebold_mariano_stat": 18.428,
           "p_value": 0.0
         }
       },

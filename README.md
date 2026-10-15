@@ -68,40 +68,34 @@ python -m src.experiment --phase10
 uvicorn src.api.app:app --host 0.0.0.0 --port 8000
 ```
 Available Endpoints & Interfaces:
-- `GET  /` or `GET /dashboard`: Interactive HTML5/CSS3 glassmorphic forecasting dashboard with Automated Orchestration and Diagnostic modes.
+- `GET  /` or `GET /dashboard`: Enhanced interactive forecasting dashboard with 4 view tabs (Operational Prediction, Historical Backtest Curves, Multi-Horizon Benchmarks, and Publication Plot Gallery).
 - `GET  /health`: Model readiness, calibration state, schema status, and orchestrator health.
+- `GET  /api/evaluation/metrics`: Machine-readable Phase 2 & 3 benchmark metrics report.
+- `GET  /api/evaluation/plots/{filename}`: High-resolution (200 DPI) publication-grade diagnostic plots.
+- `GET  /api/evaluation/backtest_samples`: Genuine backtest predictions and actual demand observations for interactive plotting.
 - `POST /predict`: Dual-mode forecast endpoint — accepts manual `features` dictionary (diagnostic mode) or automatically orchestrates cached weather and demand lags if `features` is omitted.
 - `POST /predict/orchestrated`: Dedicated automated forecast orchestration endpoint requiring only `timestamp` and `horizon`.
 - `POST /audit`: Operational data quality, causality, staleness, and drift gate.
 - `GET  /metrics`: Prometheus exposition format metrics exporter.
 
-#### Example 1: Automated Forecast Orchestration (`POST /predict/orchestrated`)
-```bash
-curl -X POST "http://localhost:8000/predict/orchestrated" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "timestamp": "2018-08-01T12:00:00Z",
-       "horizon": 1,
-       "enforce_cutoff": true,
-       "allow_fallback_weather": true
-     }'
-```
+#### Interpreting Forecast Horizons:
+- **Real-Time ($H=1\text{h}$)**: Evaluates intra-day dispatch adjustments. Driven by high autoregressive correlation (`lag_1` at $T-1$) with NWP thermal fine-tuning (**MAE: 333.72 MW**, +5.08% skill gain over baseline tree).
+- **Day-Ahead ($H=24\text{h}$)**: Crucial for day-ahead energy auction commitments. Operates across the diurnal cycle without recent 23-hour telemetry (**MAE: 1,226.73 MW**, +33.10% skill gain over baseline tree).
+- **Two-Day Forward ($H=48\text{h}$)**: Supports medium-range thermal ramp-up and reserve allocation (**MAE: 1,487.77 MW**, +40.15% skill gain over baseline tree).
 
-#### Example 2: Diagnostic / Template Forecast (`POST /predict`)
-```bash
-curl -X POST "http://localhost:8000/predict" \
-     -H "Content-Type: application/json" \
-     -d '{
-       "timestamp": "2026-10-15T10:00:00Z",
-       "horizon": 1,
-       "features": {
-         "hour": 10.0, "day_of_week": 3.0, "day_of_month": 15.0, "month": 10.0, "is_weekend": 0.0,
-         "hour_sin": 0.5, "hour_cos": -0.866, "day_of_week_sin": 0.434, "day_of_week_cos": -0.901,
-         "lag_1": 31200.0, "lag_24": 30500.0, "lag_168": 30900.0, "rolling_mean_24": 30800.0, "rolling_std_24": 1250.0,
-         "temp_f_zonal_weighted": 57.5, "cooling_degree_proxy_regional": 0.0, "heating_degree_proxy_regional": 7.5, "temp_spread_regional": 4.7
-       }
-     }'
-```
+#### Historical Backtest Demonstration:
+To execute a fully automated prediction without manual feature construction:
+1. Start the API: `uvicorn src.api.app:app --host 0.0.0.0 --port 8000`
+2. Open your browser to `http://localhost:8000/dashboard`
+3. Under **Evaluation Scenario**, select **2018-08-01 (Historical Holdout)**.
+4. Select **H=1h**, **H=24h**, or **H=48h** and click **Run Forecast Model**.
+5. The system automatically retrieves autoregressive demand from the archive, applies diurnal climatology fallback weather, validates the decision cutoff, and displays calibrated $Q_{05}, Q_{50}, Q_{95}$ intervals.
+
+#### Live Cycle Demonstration (Diagnostic Mode):
+Because real-time SCADA demand telemetry is not connected (demand archive ends 2018-08-03), automated orchestration for 2026 cycles strictly fails closed (`HTTP 422`). To evaluate genuine NOAA HRRR GRIB2 weather decoded via ECMWF `ecCodes`:
+1. Switch **Workflow Mode** to **🧪 Diagnostic / Template Mode**.
+2. Select **2026-10-15 (Live HRRR Cycle)** and **Cached HRRR (f02)**.
+3. Click **Run Forecast Model** to evaluate the model using genuine 2026 HRRR forecasts and template demand features.
 
 ### 7. Run Weather Update Worker Daemon
 ```bash
@@ -119,7 +113,17 @@ docker compose up -d
 ```bash
 python -m src.evaluation.evaluate_accuracy
 ```
-Executes strictly deterministic multi-horizon evaluation across $H \in \{1\text{h}, 24\text{h}, 48\text{h}\}$, computes scale-independent WAPE, evaluates conformal prediction intervals, performs Diebold-Mariano tests against persistence and seasonal naive baselines, and generates artifacts in `outputs/improvement/`.
+Executes strictly deterministic multi-horizon evaluation across $H \in \{1\text{h}, 24\text{h}, 48\text{h}\}$, computes scale-independent WAPE, evaluates conformal prediction intervals, performs Diebold-Mariano tests with Newey-West Bartlett weighting, and generates artifacts in `outputs/improvement/`:
+- Metrics JSON: `outputs/improvement/forecast_metrics.json`
+- Prediction CSV: `outputs/improvement/forecast_predictions.csv`
+- Publication Plots: `outputs/improvement/plots/`
+  - `actual_vs_predicted_h1.png`: Peak summer H=1 actual vs predicted demand and 90% conformal band.
+  - `actual_vs_predicted_h24.png`: Day-ahead peak summer tracking vs baseline tree.
+  - `actual_vs_predicted_h48.png`: Two-day forward tracking vs baseline tree.
+  - `forecast_error_distribution.png`: 3-horizon faceted residual error distributions with Gaussian fit.
+  - `horizon_metric_comparison.png`: Side-by-side benchmark comparison with NWP skill gains.
+  - `prediction_intervals.png`: 2-panel chart of conformal intervals, miss markers, and interval width.
+
 
 ---
 
@@ -168,6 +172,7 @@ For complete architectural specifications, mathematical formulations, and valida
 - [Phase 12: Deployment and Security Validation](docs/phase12_deployment_and_security_validation.md)
 - [Phase 13: End-to-End Forecasting Validation & Scientific Audit](docs/phase13_end_to_end_forecast_validation.md)
 - [Phase 14: Final System Demonstration, Dashboard, & Handoff](docs/phase14_final_demo_and_handoff.md)
+- [Phase 3: Dashboard Improvements, Visualization, & Operational Readiness](docs/improvement/dashboard_and_operational_readiness.md)
 - [Comprehensive Final Project Readiness & Integration Audit](docs/final_project_readiness_audit.md)
 - [Execution & Validation Log](docs/execution_and_validation_log.md)
 
