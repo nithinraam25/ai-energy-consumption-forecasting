@@ -1,0 +1,477 @@
+{
+  "evaluation_timestamp": "2026-10-15T13:44:07.541873+00:00",
+  "dataset_summary": {
+    "total_records": 145362,
+    "start_time": "2002-01-01T01:00:00",
+    "end_time": "2018-08-03T00:00:00",
+    "train_ratio": 0.7,
+    "val_ratio": 0.15,
+    "test_ratio": 0.15
+  },
+  "horizons": {
+    "H=1h": {
+      "horizon_hours": 1,
+      "test_sample_count": 21773,
+      "test_start_utc": "2016-02-07T11:00:00",
+      "test_end_utc": "2018-08-03T00:00:00",
+      "models": {
+        "production_nwp": {
+          "mae_mw": 333.72,
+          "rmse_mw": 446.71,
+          "r2": 0.9952,
+          "mape_pct": 1.08,
+          "wape_pct": 1.07,
+          "features_count": 17
+        },
+        "baseline_no_weather": {
+          "mae_mw": 351.58,
+          "rmse_mw": 469.83,
+          "r2": 0.9947,
+          "mape_pct": 1.13,
+          "wape_pct": 1.13,
+          "gain_nwp_pct": 5.08,
+          "diebold_mariano_stat": 15.908,
+          "p_value": 0.0,
+          "statistically_significant": true
+        },
+        "persistence": {
+          "lag_used": "lag_1",
+          "mae_mw": 1054.91,
+          "rmse_mw": 1354.76,
+          "r2": 0.9558,
+          "mape_pct": 3.43,
+          "wape_pct": 3.39,
+          "gain_nwp_pct": 68.36,
+          "diebold_mariano_stat": 118.794,
+          "p_value": 0.0
+        },
+        "daily_seasonal_naive": {
+          "lag_used": "lag_24",
+          "mae_mw": 2206.65,
+          "rmse_mw": 3027.87,
+          "r2": 0.7791,
+          "mape_pct": 7.01,
+          "wape_pct": 7.09
+        },
+        "weekly_seasonal_naive": {
+          "lag_used": "lag_168",
+          "mae_mw": 3436.23,
+          "rmse_mw": 4737.01,
+          "r2": 0.4594,
+          "mape_pct": 10.7,
+          "wape_pct": 11.05,
+          "diebold_mariano_stat": 140.842,
+          "p_value": 0.0
+        }
+      },
+      "sliced_by_season": {
+        "Winter": {
+          "sample_count": 4861,
+          "mae_mw": 331.49,
+          "rmse_mw": 440.22,
+          "mape_pct": 1.02,
+          "wape_pct": 1.02
+        },
+        "Spring": {
+          "sample_count": 6615,
+          "mae_mw": 325.69,
+          "rmse_mw": 442.35,
+          "mape_pct": 1.16,
+          "wape_pct": 1.16
+        },
+        "Summer": {
+          "sample_count": 5929,
+          "mae_mw": 334.18,
+          "rmse_mw": 449.78,
+          "mape_pct": 0.94,
+          "wape_pct": 0.95
+        },
+        "Fall": {
+          "sample_count": 4368,
+          "mae_mw": 347.77,
+          "rmse_mw": 456.17,
+          "mape_pct": 1.2,
+          "wape_pct": 1.21
+        }
+      },
+      "sliced_by_demand_tier": {
+        "Q1_Low (<25th)": {
+          "sample_count": 5444,
+          "mae_mw": 236.69,
+          "rmse_mw": 323.79,
+          "mape_pct": 0.99,
+          "wape_pct": 0.99
+        },
+        "Q2_MedLow (25-50th)": {
+          "sample_count": 5444,
+          "mae_mw": 333.44,
+          "rmse_mw": 455.06,
+          "mape_pct": 1.17,
+          "wape_pct": 1.17
+        },
+        "Q3_MedHigh (50-75th)": {
+          "sample_count": 5442,
+          "mae_mw": 361.08,
+          "rmse_mw": 462.22,
+          "mape_pct": 1.13,
+          "wape_pct": 1.13
+        },
+        "Q4_High (75-95th)": {
+          "sample_count": 4354,
+          "mae_mw": 390.7,
+          "rmse_mw": 503.12,
+          "mape_pct": 1.03,
+          "wape_pct": 1.02
+        },
+        "Peak_Extreme (>95th)": {
+          "sample_count": 1089,
+          "mae_mw": 455.71,
+          "rmse_mw": 592.22,
+          "mape_pct": 0.95,
+          "wape_pct": 0.96
+        }
+      },
+      "sliced_by_day_type": {
+        "weekday": {
+          "sample_count": 15577,
+          "mae_mw": 335.89,
+          "wape_pct": 1.05
+        },
+        "weekend": {
+          "sample_count": 6196,
+          "mae_mw": 328.28,
+          "wape_pct": 1.12
+        }
+      }
+    },
+    "H=24h": {
+      "horizon_hours": 24,
+      "test_sample_count": 21773,
+      "test_start_utc": "2016-02-07T11:00:00",
+      "test_end_utc": "2018-08-03T00:00:00",
+      "models": {
+        "production_nwp": {
+          "mae_mw": 1226.73,
+          "rmse_mw": 1629.45,
+          "r2": 0.936,
+          "mape_pct": 3.94,
+          "wape_pct": 3.94,
+          "features_count": 17
+        },
+        "baseline_no_weather": {
+          "mae_mw": 1833.64,
+          "rmse_mw": 2482.8,
+          "r2": 0.8515,
+          "mape_pct": 5.8,
+          "wape_pct": 5.9,
+          "gain_nwp_pct": 33.1,
+          "diebold_mariano_stat": 17.857,
+          "p_value": 0.0,
+          "statistically_significant": true
+        },
+        "persistence": {
+          "lag_used": "lag_24",
+          "mae_mw": 2207.04,
+          "rmse_mw": 3028.07,
+          "r2": 0.7791,
+          "mape_pct": 7.02,
+          "wape_pct": 7.1,
+          "gain_nwp_pct": 44.42,
+          "diebold_mariano_stat": 19.94,
+          "p_value": 0.0
+        },
+        "daily_seasonal_naive": {
+          "lag_used": "lag_24",
+          "mae_mw": 2207.04,
+          "rmse_mw": 3028.07,
+          "r2": 0.7791,
+          "mape_pct": 7.02,
+          "wape_pct": 7.1
+        },
+        "weekly_seasonal_naive": {
+          "lag_used": "lag_168",
+          "mae_mw": 3436.71,
+          "rmse_mw": 4737.12,
+          "r2": 0.4594,
+          "mape_pct": 10.7,
+          "wape_pct": 11.05,
+          "diebold_mariano_stat": 19.31,
+          "p_value": 0.0
+        }
+      },
+      "sliced_by_season": {
+        "Winter": {
+          "sample_count": 4861,
+          "mae_mw": 1105.56,
+          "rmse_mw": 1411.36,
+          "mape_pct": 3.41,
+          "wape_pct": 3.4
+        },
+        "Spring": {
+          "sample_count": 6615,
+          "mae_mw": 1023.69,
+          "rmse_mw": 1357.28,
+          "mape_pct": 3.65,
+          "wape_pct": 3.66
+        },
+        "Summer": {
+          "sample_count": 5929,
+          "mae_mw": 1597.04,
+          "rmse_mw": 2051.58,
+          "mape_pct": 4.63,
+          "wape_pct": 4.54
+        },
+        "Fall": {
+          "sample_count": 4368,
+          "mae_mw": 1166.43,
+          "rmse_mw": 1585.86,
+          "mape_pct": 4.04,
+          "wape_pct": 4.06
+        }
+      },
+      "sliced_by_demand_tier": {
+        "Q1_Low (<25th)": {
+          "sample_count": 5444,
+          "mae_mw": 931.68,
+          "rmse_mw": 1251.88,
+          "mape_pct": 3.87,
+          "wape_pct": 3.89
+        },
+        "Q2_MedLow (25-50th)": {
+          "sample_count": 5444,
+          "mae_mw": 1172.42,
+          "rmse_mw": 1512.85,
+          "mape_pct": 4.12,
+          "wape_pct": 4.12
+        },
+        "Q3_MedHigh (50-75th)": {
+          "sample_count": 5442,
+          "mae_mw": 1184.18,
+          "rmse_mw": 1541.74,
+          "mape_pct": 3.7,
+          "wape_pct": 3.7
+        },
+        "Q4_High (75-95th)": {
+          "sample_count": 4354,
+          "mae_mw": 1578.79,
+          "rmse_mw": 2053.29,
+          "mape_pct": 4.13,
+          "wape_pct": 4.14
+        },
+        "Peak_Extreme (>95th)": {
+          "sample_count": 1089,
+          "mae_mw": 1778.27,
+          "rmse_mw": 2252.62,
+          "mape_pct": 3.76,
+          "wape_pct": 3.73
+        }
+      },
+      "sliced_by_day_type": {
+        "weekday": {
+          "sample_count": 15574,
+          "mae_mw": 1238.97,
+          "wape_pct": 3.89
+        },
+        "weekend": {
+          "sample_count": 6199,
+          "mae_mw": 1195.98,
+          "wape_pct": 4.09
+        }
+      }
+    },
+    "H=48h": {
+      "horizon_hours": 48,
+      "test_sample_count": 21773,
+      "test_start_utc": "2016-02-07T11:00:00",
+      "test_end_utc": "2018-08-03T00:00:00",
+      "models": {
+        "production_nwp": {
+          "mae_mw": 1487.77,
+          "rmse_mw": 1949.6,
+          "r2": 0.9084,
+          "mape_pct": 4.81,
+          "wape_pct": 4.78,
+          "features_count": 17
+        },
+        "baseline_no_weather": {
+          "mae_mw": 2485.98,
+          "rmse_mw": 3290.47,
+          "r2": 0.7392,
+          "mape_pct": 7.88,
+          "wape_pct": 7.99,
+          "gain_nwp_pct": 40.15,
+          "diebold_mariano_stat": 15.1,
+          "p_value": 0.0,
+          "statistically_significant": true
+        },
+        "persistence": {
+          "lag_used": "lag_48",
+          "mae_mw": 3232.37,
+          "rmse_mw": 4297.64,
+          "r2": 0.555,
+          "mape_pct": 10.36,
+          "wape_pct": 10.39,
+          "gain_nwp_pct": 53.97,
+          "diebold_mariano_stat": 19.645,
+          "p_value": 0.0
+        },
+        "daily_seasonal_naive": {
+          "lag_used": "lag_48",
+          "mae_mw": 3232.37,
+          "rmse_mw": 4297.64,
+          "r2": 0.555,
+          "mape_pct": 10.36,
+          "wape_pct": 10.39
+        },
+        "weekly_seasonal_naive": {
+          "lag_used": "lag_168",
+          "mae_mw": 3437.21,
+          "rmse_mw": 4737.58,
+          "r2": 0.4593,
+          "mape_pct": 10.71,
+          "wape_pct": 11.05,
+          "diebold_mariano_stat": 14.481,
+          "p_value": 0.0
+        }
+      },
+      "sliced_by_season": {
+        "Winter": {
+          "sample_count": 4861,
+          "mae_mw": 1235.58,
+          "rmse_mw": 1563.54,
+          "mape_pct": 3.85,
+          "wape_pct": 3.8
+        },
+        "Spring": {
+          "sample_count": 6615,
+          "mae_mw": 1271.27,
+          "rmse_mw": 1660.15,
+          "mape_pct": 4.54,
+          "wape_pct": 4.54
+        },
+        "Summer": {
+          "sample_count": 5929,
+          "mae_mw": 1960.95,
+          "rmse_mw": 2489.94,
+          "mape_pct": 5.73,
+          "wape_pct": 5.57
+        },
+        "Fall": {
+          "sample_count": 4368,
+          "mae_mw": 1454.02,
+          "rmse_mw": 1906.93,
+          "mape_pct": 5.04,
+          "wape_pct": 5.06
+        }
+      },
+      "sliced_by_demand_tier": {
+        "Q1_Low (<25th)": {
+          "sample_count": 5444,
+          "mae_mw": 1181.59,
+          "rmse_mw": 1547.19,
+          "mape_pct": 4.93,
+          "wape_pct": 4.93
+        },
+        "Q2_MedLow (25-50th)": {
+          "sample_count": 5443,
+          "mae_mw": 1448.17,
+          "rmse_mw": 1836.95,
+          "mape_pct": 5.09,
+          "wape_pct": 5.09
+        },
+        "Q3_MedHigh (50-75th)": {
+          "sample_count": 5443,
+          "mae_mw": 1459.07,
+          "rmse_mw": 1909.75,
+          "mape_pct": 4.57,
+          "wape_pct": 4.56
+        },
+        "Q4_High (75-95th)": {
+          "sample_count": 4354,
+          "mae_mw": 1794.71,
+          "rmse_mw": 2333.03,
+          "mape_pct": 4.7,
+          "wape_pct": 4.71
+        },
+        "Peak_Extreme (>95th)": {
+          "sample_count": 1089,
+          "mae_mw": 2132.59,
+          "rmse_mw": 2677.75,
+          "mape_pct": 4.51,
+          "wape_pct": 4.48
+        }
+      },
+      "sliced_by_day_type": {
+        "weekday": {
+          "sample_count": 15574,
+          "mae_mw": 1522.39,
+          "wape_pct": 4.78
+        },
+        "weekend": {
+          "sample_count": 6199,
+          "mae_mw": 1400.79,
+          "wape_pct": 4.79
+        }
+      }
+    }
+  },
+  "probabilistic_calibration": {
+    "nominal_target_coverage": 0.9,
+    "test_sample_count": 21762,
+    "raw_quantiles": {
+      "coverage_pct": 86.12,
+      "mean_width_mw": 4099.19,
+      "median_width_mw": 3438.68,
+      "winkler_score_mw": 5097.43,
+      "ordering_violations": 0
+    },
+    "global_scalar_conformal": {
+      "coverage_pct": 88.09,
+      "mean_width_mw": 4212.58,
+      "median_width_mw": 3552.07,
+      "winkler_score_mw": 5064.58
+    },
+    "champion_adaptive_diurnal_conformal": {
+      "coverage_pct": 88.28,
+      "mean_width_mw": 4180.74,
+      "median_width_mw": 3477.98,
+      "winkler_score_mw": 4930.39,
+      "ordering_violations": 0,
+      "coverage_gap_to_nominal_pct": -1.72
+    },
+    "sliced_coverage": {
+      "by_season_pct": {
+        "Winter": 87.83,
+        "Spring": 86.43,
+        "Summer": 91.42,
+        "Fall": 87.32
+      },
+      "by_hour_pct": {
+        "H00": 90.97,
+        "H01": 92.28,
+        "H02": 89.97,
+        "H03": 92.15,
+        "H04": 92.65,
+        "H05": 90.38,
+        "H06": 88.42,
+        "H07": 92.83,
+        "H08": 91.4,
+        "H09": 85.23,
+        "H10": 81.81,
+        "H11": 78.72,
+        "H12": 80.71,
+        "H13": 83.79,
+        "H14": 87.43,
+        "H15": 85.23,
+        "H16": 88.11,
+        "H17": 88.44,
+        "H18": 87.67,
+        "H19": 89.98,
+        "H20": 93.61,
+        "H21": 90.2,
+        "H22": 90.31,
+        "H23": 86.45
+      }
+    }
+  }
+}

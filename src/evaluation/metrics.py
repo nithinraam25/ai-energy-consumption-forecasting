@@ -27,6 +27,7 @@ class MetricResults:
     sample_count: int
     mape_excluded_count: int
     notes: tuple[str, ...]
+    wape: float = 0.0
 
     def to_dict(self, clean_nan: bool = False) -> dict[str, Any]:
         """Convert results to a standard dictionary.
@@ -118,6 +119,14 @@ def calculate_metrics(
         if mape_excluded > 0:
             notes.append(f"Excluded {mape_excluded} near-zero observation(s) from MAPE calculation.")
 
+    # 5. WAPE (Weighted Absolute Percentage Error = sum(|y_t - y_p|) / sum(y_t) * 100)
+    sum_true = float(np.sum(y_t))
+    if sum_true > 0:
+        wape = float(np.sum(np.abs(y_t - y_p)) / sum_true * 100.0)
+    else:
+        wape = float("nan")
+        notes.append("Sum of actual values is non-positive; WAPE is undefined (NaN).")
+
     return MetricResults(
         mae=mae,
         rmse=rmse,
@@ -126,6 +135,7 @@ def calculate_metrics(
         sample_count=len(y_t),
         mape_excluded_count=mape_excluded,
         notes=tuple(notes),
+        wape=wape,
     )
 
 

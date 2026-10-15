@@ -115,16 +115,22 @@ docker compose up -d
 ```
 *(Note: Docker runtime validation is currently BLOCKED on local Windows hosts where Docker is not installed on PATH, but fully configured for Docker-enabled Linux/Cloud environments.)*
 
+### 9. Run Reproducible Forecast Evaluation Suite
+```bash
+python -m src.evaluation.evaluate_accuracy
+```
+Executes strictly deterministic multi-horizon evaluation across $H \in \{1\text{h}, 24\text{h}, 48\text{h}\}$, computes scale-independent WAPE, evaluates conformal prediction intervals, performs Diebold-Mariano tests against persistence and seasonal naive baselines, and generates artifacts in `outputs/improvement/`.
+
 ---
 
 ## 🔬 Benchmark Performance & Provenance Reality
 
-Evaluated across the 21,773-hour held-out test partition (2016–2018):
-- **Real-Time ($H=1\text{h}$)**: **$332.90\text{ MW}$ MAE** ($R^2 = 0.9952$, $\text{MAPE} = 1.07\%$) vs Persistence ($1,054.91\text{ MW}$).
-- **Day-Ahead ($H=24\text{h}$)**: **$1,227.22\text{ MW}$ MAE** ($R^2 = 0.9364$, $\text{MAPE} = 3.95\%$) — **33.3% improvement** over no-weather tree ($1,840.80\text{ MW}$).
-- **Two-Day ($H=48\text{h}$)**: **$1,485.31\text{ MW}$ MAE** ($R^2 = 0.9082$, $\text{MAPE} = 4.80\%$) — **40.3% improvement** over no-weather tree ($2,485.69\text{ MW}$).
-- **Probabilistic Coverage**: **$88.21\%$ empirical coverage** against 90% target using Adaptive Diurnal CQR ($4,180.61\text{ MW}$ mean width); reaches **$92.16\%$ coverage** during peak heatwaves ($T > 75^\circ\text{F}$). Zero quantile-crossing violations across all test hours.
-- **Meteorological Provenance**: Genuine operational GRIB2 ingestion is verified via ECMWF `ecCodes` on live 2026 cycles; historical 2002–2018 benchmark metrics represent a retrospective simulation of operational forecast quality using AR(1) error innovations on surface observations.
+Evaluated across the 21,773-hour held-out test partition (February 7, 2016 to August 3, 2018 UTC) with zero test-set hyperparameter tuning:
+- **Real-Time ($H=1\text{h}$)**: **$333.72\text{ MW}$ MAE**, **$1.07\%$ WAPE** ($R^2 = 0.9952$, $\text{MAPE} = 1.08\%$) vs Persistence ($1,054.91\text{ MW}$). Skill gain: **$+5.08\%$** over no-weather tree ($p < 10^{-15}$, Diebold-Mariano DM = 15.91).
+- **Day-Ahead ($H=24\text{h}$)**: **$1,226.73\text{ MW}$ MAE**, **$3.94\%$ WAPE** ($R^2 = 0.9360$, $\text{MAPE} = 3.94\%$) vs Persistence ($2,207.04\text{ MW}$) — **$+33.10\%$ skill gain** over no-weather tree ($1,833.64\text{ MW}$, $p < 10^{-15}$, DM = 17.86).
+- **Two-Day ($H=48\text{h}$)**: **$1,487.77\text{ MW}$ MAE**, **$4.78\%$ WAPE** ($R^2 = 0.9084$, $\text{MAPE} = 4.81\%$) vs Persistence ($3,232.37\text{ MW}$) — **$+40.15\%$ skill gain** over no-weather tree ($2,485.98\text{ MW}$, $p < 10^{-15}$, DM = 15.10).
+- **Probabilistic Coverage**: **$88.28\%$ empirical coverage** against nominal $90\%$ target using Adaptive Diurnal CQR ($4,180.74\text{ MW}$ mean width, Winkler score $4,930.39\text{ MW}$). Zero quantile-crossing violations across all test hours.
+- **Meteorological Provenance**: Genuine operational GRIB2 ingestion is verified via ECMWF `ecCodes` on live 2026 cycles; historical 2002–2018 benchmark metrics represent a retrospective simulation of operational forecast quality using AR(1) error innovations on surface observations. Full report available at [`docs/improvement/forecast_accuracy_report.md`](docs/improvement/forecast_accuracy_report.md).
 
 ---
 
