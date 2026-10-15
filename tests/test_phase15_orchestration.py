@@ -376,3 +376,196 @@ def test_dashboard_endpoint_serves_updated_orchestrated_dashboard(client):
         assert "Workflow Mode" in res.text
         assert "Holdout Archive" in res.text
         assert "setWorkflowMode" in res.text
+
+
+# ==============================================================================
+# 5. REGRESSION TESTS: SCENARIO & TIMESTAMP CONSISTENCY
+# ==============================================================================
+
+def test_api_predict_rejects_incompatible_weather_and_target_timestamps(client):
+    """Regression Test: Verify API rejects combining 2026 weather forecast with 2018 target demand."""
+    template_features = {
+        "hour": 12.0, "day_of_week": 2.0, "day_of_month": 1.0, "month": 8.0, "is_weekend": 0.0,
+        "hour_sin": 0.0, "hour_cos": -1.0, "day_of_week_sin": 0.9749, "day_of_week_cos": -0.2225,
+        "lag_1": 34500.0, "lag_24": 33800.0, "lag_168": 34100.0, "rolling_mean_24": 33950.0, "rolling_std_24": 1420.0,
+        "temp_f_zonal_weighted": 75.20, "cooling_degree_proxy_regional": 10.20, "heating_degree_proxy_regional": 0.0, "temp_spread_regional": 2.54
+    }
+    payload = {
+        "timestamp": "2018-08-01T12:00:00Z",
+        "horizon": 1,
+        "features": template_features,
+        "weather_inputs": {
+            "temp_f_kphl": 58.06,
+            "temp_f_kewr": 54.91,
+            "temp_f_kilg": 59.61,
+            "temp_f_zonal_weighted": 57.05,
+            "temp_spread_regional": 4.70,
+            "simulated_avail_utc": "2026-10-15T08:50:00Z",
+            "valid_time_utc": "2026-10-15T10:00:00Z",  # 2026 forecast for 2018 demand!
+            "provenance": "NOAA_HRRR_OPERATIONAL_ECCODES"
+        },
+        "enforce_cutoff": True,
+    }
+    resp = client.post("/predict", json=payload)
+    assert resp.status_code == 400
+    detail = resp.json()["detail"]
+    assert "WEATHER TIMESTAMP MISMATCH" in detail
+    assert "2026-10-15T10:00:00Z" in detail
+    assert "2018-08-01T12:00:00Z" in detail
+
+
+def test_api_predict_rejects_future_weather_lookahead_for_historical_demand(client):
+    """Regression Test: Verify API rejects using 2026 availability to predict 2018 demand even without valid_time_utc."""
+    template_features = {
+        "hour": 12.0, "day_of_week": 2.0, "day_of_month": 1.0, "month": 8.0, "is_weekend": 0.0,
+        "hour_sin": 0.0, "hour_cos": -1.0, "day_of_week_sin": 0.9749, "day_of_week_cos": -0.2225,
+        "lag_1": 34500.0, "lag_24": 33800.0, "lag_168": 34100.0, "rolling_mean_24": 33950.0, "rolling_std_24": 1420.0,
+        "temp_f_zonal_weighted": 75.20, "cooling_degree_proxy_regional": 10.20, "heating_degree_proxy_regional": 0.0, "temp_spread_regional": 2.54
+    }
+    payload = {
+        "timestamp": "2018-08-01T12:00:00Z",
+        "horizon": 1,
+        "features": template_features,
+        "weather_inputs": {
+            "temp_f_zonal_weighted": 57.05,
+            "temp_spread_regional": 4.70,
+            "simulated_avail_utc": "2026-10-15T08:50:00Z",  # 8 years in the future!
+            "provenance": "NOAA_HRRR_OPERATIONAL"
+        },
+        "enforce_cutoff": True,
+    }
+    resp = client.post("/predict", json=payload)
+    assert resp.status_code == 400
+    detail = resp.json()["detail"]
+    assert "LOOKAHEAD VIOLATION" in detail or "CAUSALITY VIOLATION" in detail
+
+
+def test_api_predict_rejects_post_cutoff_weather_for_live_cycle(client):
+    """Regression Test: Verify causality enforcement rejects weather available after decision cutoff."""
+    template_features = {
+        "hour": 10.0, "day_of_week": 3.0, "day_of_month": 15.0, "month": 10.0, "is_weekend": 0.0,
+        "hour_sin": 0.5, "hour_cos": -0.8660, "day_of_week_sin": 0.4338, "day_of_week_cos": -0.9009,
+        "lag_1": 31200.0, "lag_24": 30500.0, "lag_168": 30900.0, "rolling_mean_24": 30800.0, "rolling_std_24": 1250.0,
+        "temp_f_zonal_weighted": 57.05, "cooling_degree_proxy_regional": 0.0, "heating_degree_proxy_regional": 7.95, "temp_spread_regional": 4.70
+    }
+    # For H=1, target 10:00 UTC, cutoff is 09:00 UTC. Weather available at 09:45 is post-cutoff!
+    payload_h1_violate = {
+        "timestamp": "2026-10-15T10:00:00Z",
+        "horizon": 1,
+        "features": template_features,
+        "weather_inputs": {
+            "temp_f_zonal_weighted": 57.05,
+            "temp_spread_regional": 4.70,
+            "simulated_avail_utc": "2026-10-15T09:45:00Z",  # 45 mins AFTER 09:00 cutoff!
+            "valid_time_utc": "2026-10-15T10:00:00Z",
+            "provenance": "NOAA_HRRR_OPERATIONAL"
+        },
+        "enforce_cutoff": True,
+    }
+    resp1 = client.post("/predict", json=payload_h1_violate)
+    assert resp1.status_code == 400
+    assert "CAUSALITY VIOLATION" in resp1.json()["detail"]
+
+    # For H=24, target 2026-10-15T10:00 UTC, cutoff is 2026-10-14T10:00 UTC.
+    # Weather available at 2026-10-15T08:50 is 22h AFTER the H=24 cutoff!
+    payload_h24_violate = {
+        "timestamp": "2026-10-15T10:00:00Z",
+        "horizon": 24,
+        "features": template_features,
+        "weather_inputs": {
+            "temp_f_zonal_weighted": 57.05,
+            "temp_spread_regional": 4.70,
+            "simulated_avail_utc": "2026-10-15T08:50:00Z",
+            "valid_time_utc": "2026-10-15T10:00:00Z",
+            "provenance": "NOAA_HRRR_OPERATIONAL_ECCODES"
+        },
+        "enforce_cutoff": True,
+    }
+    resp2 = client.post("/predict", json=payload_h24_violate)
+    assert resp2.status_code == 400
+    assert "CAUSALITY VIOLATION" in resp2.json()["detail"]
+
+
+def test_api_predict_diagnostic_mode_historical_holdout_success(client):
+    """Regression Test: Diagnostic mode for 2018 holdout with causal 2018 fallback weather succeeds."""
+    template_features = {
+        "hour": 12.0, "day_of_week": 2.0, "day_of_month": 1.0, "month": 8.0, "is_weekend": 0.0,
+        "hour_sin": 0.0, "hour_cos": -1.0, "day_of_week_sin": 0.9749, "day_of_week_cos": -0.2225,
+        "lag_1": 34500.0, "lag_24": 33800.0, "lag_168": 34100.0, "rolling_mean_24": 33950.0, "rolling_std_24": 1420.0,
+        "temp_f_zonal_weighted": 75.20, "cooling_degree_proxy_regional": 10.20, "heating_degree_proxy_regional": 0.0, "temp_spread_regional": 2.54
+    }
+    payload = {
+        "timestamp": "2018-08-01T12:00:00Z",
+        "horizon": 1,
+        "features": template_features,
+        "weather_inputs": {
+            "temp_f_zonal_weighted": 75.20,
+            "temp_spread_regional": 2.54,
+            "simulated_avail_utc": "2018-08-01T06:00:00Z",
+            "valid_time_utc": "2018-08-01T12:00:00Z",
+            "provenance": "FALLBACK_DIURNAL_CLIMATOLOGY",
+            "is_fallback": True,
+        },
+        "enforce_cutoff": True,
+    }
+    resp = client.post("/predict", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["point_forecast_mw"] > 0.0
+    assert data["weather_data_provenance"] == "FALLBACK_DIURNAL_CLIMATOLOGY"
+    assert any("FALLBACK_WEATHER_USED" in w for w in data["data_quality_warnings"])
+
+
+def test_api_predict_diagnostic_mode_live_hrrr_success(client):
+    """Regression Test: Diagnostic mode for 2026 live HRRR with cached 2026 HRRR weather succeeds for H=1."""
+    template_features = {
+        "hour": 10.0, "day_of_week": 3.0, "day_of_month": 15.0, "month": 10.0, "is_weekend": 0.0,
+        "hour_sin": 0.5, "hour_cos": -0.8660, "day_of_week_sin": 0.4338, "day_of_week_cos": -0.9009,
+        "lag_1": 31200.0, "lag_24": 30500.0, "lag_168": 30900.0, "rolling_mean_24": 30800.0, "rolling_std_24": 1250.0,
+        "temp_f_zonal_weighted": 57.05, "cooling_degree_proxy_regional": 0.0, "heating_degree_proxy_regional": 7.95, "temp_spread_regional": 4.70
+    }
+    payload = {
+        "timestamp": "2026-10-15T10:00:00Z",
+        "horizon": 1,
+        "features": template_features,
+        "weather_inputs": {
+            "temp_f_kphl": 58.06,
+            "temp_f_kewr": 54.91,
+            "temp_f_kilg": 59.61,
+            "temp_f_zonal_weighted": 57.05,
+            "temp_spread_regional": 4.70,
+            "simulated_avail_utc": "2026-10-15T08:50:00Z",
+            "valid_time_utc": "2026-10-15T10:00:00Z",
+            "provenance": "NOAA_HRRR_OPERATIONAL_ECCODES",
+        },
+        "enforce_cutoff": True,
+    }
+    resp = client.post("/predict", json=payload)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["point_forecast_mw"] > 0.0
+    assert data["weather_data_provenance"] == "NOAA_HRRR_OPERATIONAL_ECCODES"
+    assert data["q05_mw"] <= data["q50_mw"] <= data["q95_mw"]
+
+
+def test_dashboard_html_contains_scenario_consistency_and_stale_clearing_guards(client):
+    """Regression Test: Verify dashboard HTML/JS contains stale-result clearing and scenario-specific controls."""
+    res = client.get("/dashboard")
+    assert res.status_code == 200
+    html = res.text
+
+    # Stale result clearing function
+    assert "clearPredictionDisplay" in html
+    assert "pointForecastValue" in html
+    assert "intervalWidthValue" in html
+
+    # Distinct diagnostic options for 2018 vs 2026
+    assert "renderDiagnosticWeatherButtons" in html
+    assert "fallback_2018" in html
+    assert "live_2026" in html
+
+    # Dynamic provenance rendering (no hard-coded static text)
+    assert "provenanceBadgeText" in html
+    assert "PROVENANCE: INITIALIZING..." in html
+    assert "updateScenarioProvenancePreview" in html
+

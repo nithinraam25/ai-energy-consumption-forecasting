@@ -464,8 +464,8 @@
           <span class="pulse-dot"></span>
           <span id="apiStatusText">API: CONNECTING...</span>
         </div>
-        <div id="provenanceBadge" class="badge badge-live">
-          <span>PROVENANCE: GENUINE NOAA HRRR</span>
+        <div id="provenanceBadge" class="badge badge-simulated">
+          <span id="provenanceBadgeText">PROVENANCE: INITIALIZING...</span>
         </div>
       </div>
     </header>
@@ -512,11 +512,8 @@
 
       <div id="diagnosticWeatherGroup" class="control-group" style="display: none;">
         <span class="control-label">Diagnostic Input Mode</span>
-        <div class="btn-group">
-          <button class="btn-tab active" onclick="setWeatherMode('live', this)">Cached HRRR (f02)</button>
-          <button class="btn-tab" onclick="setWeatherMode('fallback', this)">Causal Fallback</button>
-          <button class="btn-tab" onclick="setWeatherMode('stale', this)">Stale Input</button>
-          <button class="btn-tab" onclick="setWeatherMode('post_cutoff', this)">Post-Cutoff (Violate)</button>
+        <div class="btn-group" id="diagWeatherButtons">
+          <!-- Populated dynamically based on active scenario -->
         </div>
       </div>
 
@@ -525,6 +522,11 @@
           <span>Run Forecast Model</span> ➔
         </button>
       </div>
+    </div>
+
+    <div id="workflowModeInfo" style="margin-top: -14px; margin-bottom: 20px; font-size: 12px; color: var(--text-muted); padding: 8px 14px; background: rgba(15, 23, 42, 0.4); border-radius: 8px; border: 1px solid var(--border-color); display: flex; align-items: center; gap: 8px;">
+      <span style="color: var(--accent-cyan); font-weight: 600;">MODE:</span>
+      <span id="workflowModeText">⚡ Automated Orchestration: Discovers eligible weather in cache (or activates causal fallback) and retrieves autoregressive demand history from archive without future lookahead.</span>
     </div>
 
     <!-- Main Grid -->
@@ -586,45 +588,45 @@
         <div class="card">
           <div class="card-header">
             <div class="card-title">🌦️ Meteorological Provenance</div>
-            <span id="weatherProvenanceBadge" class="badge badge-live">LIVE HRRR</span>
+            <span id="weatherProvenanceBadge" class="badge badge-simulated">INITIALIZING</span>
           </div>
 
           <div class="kv-list">
             <div class="kv-item">
               <span class="kv-key">Source Feed</span>
-              <span id="metaSourceText" class="kv-val">NOAA AWS Open Data</span>
+              <span id="metaSourceText" class="kv-val">--</span>
             </div>
             <div class="kv-item">
               <span class="kv-key">Decoder Engine</span>
-              <span class="kv-val" style="color: var(--accent-emerald);">ecCodes 2.50.0 (C-Lib)</span>
+              <span id="metaDecoderText" class="kv-val" style="color: var(--accent-emerald);">ecCodes 2.50.0 (C-Lib)</span>
             </div>
             <div class="kv-item">
               <span class="kv-key">Cycle Init Time</span>
-              <span id="metaInitTime" class="kv-val">2026-10-15 08:00 UTC</span>
+              <span id="metaInitTime" class="kv-val">--</span>
             </div>
             <div class="kv-item">
               <span class="kv-key">Forecast Lead</span>
-              <span id="metaLeadTime" class="kv-val">f02 (2 Hours)</span>
+              <span id="metaLeadTime" class="kv-val">--</span>
             </div>
             <div class="kv-item">
               <span class="kv-key">Dissemination Avail</span>
-              <span id="metaAvailTime" class="kv-val">2026-10-15 08:50 UTC</span>
+              <span id="metaAvailTime" class="kv-val">--</span>
             </div>
             <div class="kv-item">
               <span class="kv-key">KPHL (Philadelphia)</span>
-              <span id="metaTempKPHL" class="kv-val">58.06 °F (287.63 K)</span>
+              <span id="metaTempKPHL" class="kv-val">--</span>
             </div>
             <div class="kv-item">
               <span class="kv-key">KEWR (Newark)</span>
-              <span id="metaTempKEWR" class="kv-val">54.91 °F (285.88 K)</span>
+              <span id="metaTempKEWR" class="kv-val">--</span>
             </div>
             <div class="kv-item">
               <span class="kv-key">KILG (Wilmington)</span>
-              <span id="metaTempKILG" class="kv-val">59.61 °F (288.49 K)</span>
+              <span id="metaTempKILG" class="kv-val">--</span>
             </div>
             <div class="kv-item">
               <span class="kv-key">Zonal Composite</span>
-              <span id="metaTempZonal" class="kv-val" style="color: var(--accent-cyan); font-weight: 700;">57.05 °F</span>
+              <span id="metaTempZonal" class="kv-val" style="color: var(--accent-cyan); font-weight: 700;">--</span>
             </div>
           </div>
         </div>
@@ -781,50 +783,172 @@
     let currentWorkflowMode = 'orchestrated';
     let currentTargetScenario = 'holdout';
     let currentHorizon = 1;
-    let currentWeatherMode = 'live';
+    let currentWeatherMode = 'fallback_2018';
     let currentTargetTime = "2018-08-01T12:00:00";
 
-    // Diagnostic demonstration template features
-    const baseFeatures = {
-      "hour": 12.0, "day_of_week": 3.0, "day_of_month": 15.0, "month": 10.0, "is_weekend": 0.0,
-      "hour_sin": 0.0, "hour_cos": -1.0, "day_of_week_sin": 0.4338, "day_of_week_cos": -0.9009,
+    // Diagnostic demonstration template features for 2018-08-01 12:00 (Holdout Archive)
+    const holdoutFeatures = {
+      "hour": 12.0, "day_of_week": 2.0, "day_of_month": 1.0, "month": 8.0, "is_weekend": 0.0,
+      "hour_sin": 0.0, "hour_cos": -1.0, "day_of_week_sin": 0.9749, "day_of_week_cos": -0.2225,
+      "lag_1": 34500.0, "lag_24": 33800.0, "lag_168": 34100.0, "rolling_mean_24": 33950.0, "rolling_std_24": 1420.0,
+      "temp_f_zonal_weighted": 75.20, "cooling_degree_proxy_regional": 10.20, "heating_degree_proxy_regional": 0.0, "temp_spread_regional": 2.54
+    };
+
+    // Diagnostic demonstration template features for 2026-10-15 10:00 (Live HRRR Cycle)
+    const liveFeatures = {
+      "hour": 10.0, "day_of_week": 3.0, "day_of_month": 15.0, "month": 10.0, "is_weekend": 0.0,
+      "hour_sin": 0.5, "hour_cos": -0.8660, "day_of_week_sin": 0.4338, "day_of_week_cos": -0.9009,
       "lag_1": 31200.0, "lag_24": 30500.0, "lag_168": 30900.0, "rolling_mean_24": 30800.0, "rolling_std_24": 1250.0,
       "temp_f_zonal_weighted": 57.05, "cooling_degree_proxy_regional": 0.0, "heating_degree_proxy_regional": 7.95, "temp_spread_regional": 4.70
     };
+
+    function clearPredictionDisplay(statusMessage = "Awaiting execution...", isError = false) {
+      document.getElementById('pointForecastValue').innerText = '--';
+      document.getElementById('targetTimestampText').innerText = statusMessage;
+      document.getElementById('q05Text').innerText = '--';
+      document.getElementById('q50Text').innerText = '--';
+      document.getElementById('q95Text').innerText = '--';
+      document.getElementById('intervalWidthValue').innerText = '--';
+
+      const intervalSpan = document.getElementById('intervalSpan');
+      if (intervalSpan) {
+        intervalSpan.style.width = '0%';
+        intervalSpan.style.left = '50%';
+      }
+      const intervalPoint = document.getElementById('intervalPoint');
+      if (intervalPoint) {
+        intervalPoint.style.left = '50%';
+      }
+
+      if (isError) {
+        const statusBadge = document.getElementById('responseStatusBadge');
+        if (statusBadge) {
+          statusBadge.innerText = statusMessage;
+          statusBadge.className = 'badge badge-degraded';
+        }
+        const cardBadge = document.getElementById('weatherProvenanceBadge');
+        if (cardBadge) {
+          cardBadge.innerText = 'ERROR / REJECTED';
+          cardBadge.className = 'badge badge-degraded';
+        }
+        const provHeader = document.getElementById('provenanceBadge');
+        const provText = document.getElementById('provenanceBadgeText');
+        if (provText) provText.innerText = 'PROVENANCE: REJECTED';
+        if (provHeader) provHeader.className = 'badge badge-degraded';
+      }
+    }
+
+    function renderDiagnosticWeatherButtons() {
+      const container = document.getElementById('diagWeatherButtons');
+      if (!container) return;
+
+      if (currentTargetScenario === 'holdout') {
+        container.innerHTML = `
+          <button class="btn-tab ${currentWeatherMode === 'fallback_2018' ? 'active' : ''}" onclick="setWeatherMode('fallback_2018', this)">Causal Fallback (2018)</button>
+          <button class="btn-tab ${currentWeatherMode === 'stale_2018' ? 'active' : ''}" onclick="setWeatherMode('stale_2018', this)">Stale Weather (2018)</button>
+          <button class="btn-tab ${currentWeatherMode === 'post_cutoff_2018' ? 'active' : ''}" onclick="setWeatherMode('post_cutoff_2018', this)">Post-Cutoff / Violate (2018)</button>
+        `;
+      } else {
+        container.innerHTML = `
+          <button class="btn-tab ${currentWeatherMode === 'live_2026' ? 'active' : ''}" onclick="setWeatherMode('live_2026', this)">Cached HRRR (f02)</button>
+          <button class="btn-tab ${currentWeatherMode === 'fallback_2026' ? 'active' : ''}" onclick="setWeatherMode('fallback_2026', this)">Causal Fallback (2026)</button>
+          <button class="btn-tab ${currentWeatherMode === 'stale_2026' ? 'active' : ''}" onclick="setWeatherMode('stale_2026', this)">Stale Input (2026)</button>
+          <button class="btn-tab ${currentWeatherMode === 'post_cutoff_2026' ? 'active' : ''}" onclick="setWeatherMode('post_cutoff_2026', this)">Post-Cutoff / Violate (2026)</button>
+        `;
+      }
+    }
+
+    function updateScenarioProvenancePreview() {
+      if (currentTargetScenario === 'holdout') {
+        document.getElementById('metaSourceText').innerText = "Diurnal Climatology Fallback (Historical Holdout)";
+        document.getElementById('metaDecoderText').innerText = "Diurnal Climatology Model (NOAA HRRR N/A for 2018)";
+        document.getElementById('metaInitTime').innerText = "N/A (Historical Archive)";
+        document.getElementById('metaLeadTime').innerText = `H=${currentHorizon}h (Historical Forecast)`;
+        document.getElementById('metaAvailTime').innerText = "Available at Decision Cutoff";
+        document.getElementById('metaTempKPHL').innerText = "N/A (Regional Proxy)";
+        document.getElementById('metaTempKEWR').innerText = "N/A (Regional Proxy)";
+        document.getElementById('metaTempKILG').innerText = "N/A (Regional Proxy)";
+        document.getElementById('metaTempZonal').innerText = "75.20 °F (Climatology)";
+        document.getElementById('weatherProvenanceBadge').innerText = "FALLBACK_DIURNAL_CLIMATOLOGY";
+        document.getElementById('weatherProvenanceBadge').className = "badge badge-degraded";
+        document.getElementById('provenanceBadgeText').innerText = "PROVENANCE: FALLBACK_DIURNAL_CLIMATOLOGY";
+        document.getElementById('provenanceBadge').className = "badge badge-degraded";
+      } else {
+        document.getElementById('metaSourceText').innerText = "NOAA AWS Open Data (s3://noaa-hrrr-bdw-pds)";
+        document.getElementById('metaDecoderText').innerText = "ecCodes 2.50.0 (C-Lib)";
+        document.getElementById('metaInitTime').innerText = "2026-10-15 08:00 UTC";
+        document.getElementById('metaLeadTime').innerText = "f02 (2 Hours)";
+        document.getElementById('metaAvailTime').innerText = "2026-10-15 08:50 UTC";
+        document.getElementById('metaTempKPHL').innerText = "58.06 °F (287.63 K)";
+        document.getElementById('metaTempKEWR').innerText = "54.91 °F (285.88 K)";
+        document.getElementById('metaTempKILG').innerText = "59.61 °F (288.49 K)";
+        document.getElementById('metaTempZonal').innerText = "57.05 °F";
+        document.getElementById('weatherProvenanceBadge').innerText = "NOAA_HRRR_OPERATIONAL_ECCODES";
+        document.getElementById('weatherProvenanceBadge').className = "badge badge-live";
+        document.getElementById('provenanceBadgeText').innerText = "PROVENANCE: NOAA_HRRR_OPERATIONAL_ECCODES";
+        document.getElementById('provenanceBadge').className = "badge badge-live";
+      }
+    }
 
     function setWorkflowMode(mode, elem) {
       currentWorkflowMode = mode;
       document.querySelectorAll('#btnModeOrchestrated, #btnModeDiagnostic').forEach(b => b.classList.remove('active'));
       elem.classList.add('active');
       const diagGroup = document.getElementById('diagnosticWeatherGroup');
+      const modeText = document.getElementById('workflowModeText');
       if (mode === 'diagnostic') {
         diagGroup.style.display = 'flex';
+        renderDiagnosticWeatherButtons();
+        if (modeText) {
+          modeText.innerText = '🧪 Diagnostic / Template Mode: Injects explicit test weather payloads and template demand features directly into the production model to audit causality, freshness, and error boundaries.';
+        }
       } else {
         diagGroup.style.display = 'none';
+        if (modeText) {
+          modeText.innerText = '⚡ Automated Orchestration: Discovers eligible weather in cache (or activates causal fallback) and retrieves autoregressive demand history from archive without future lookahead.';
+        }
       }
+      clearPredictionDisplay("Workflow mode updated. Click 'Run Forecast Model' to evaluate.");
+      document.getElementById('warningBox').style.display = 'none';
+      document.getElementById('rawJsonResponse').innerText = 'Awaiting forecast execution...';
     }
 
     function setTargetScenario(scenario, elem) {
       currentTargetScenario = scenario;
       document.querySelectorAll('#btnTargetHoldout, #btnTargetLive').forEach(b => b.classList.remove('active'));
       elem.classList.add('active');
+
       if (scenario === 'holdout') {
         currentTargetTime = "2018-08-01T12:00:00";
+        currentWeatherMode = 'fallback_2018';
       } else {
         currentTargetTime = "2026-10-15T10:00:00";
+        currentWeatherMode = 'live_2026';
       }
+
+      renderDiagnosticWeatherButtons();
+      updateScenarioProvenancePreview();
+      clearPredictionDisplay(`Scenario switched to ${scenario === 'holdout' ? '2018 Holdout Archive' : '2026 Live HRRR Cycle'}. Click 'Run Forecast Model' to evaluate.`);
+      document.getElementById('warningBox').style.display = 'none';
+      document.getElementById('rawJsonResponse').innerText = 'Awaiting forecast execution...';
     }
 
     function setHorizon(h, elem) {
       currentHorizon = h;
       elem.parentElement.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
       elem.classList.add('active');
+      clearPredictionDisplay(`Horizon switched to H=${h}h. Click 'Run Forecast Model' to evaluate.`);
+      document.getElementById('warningBox').style.display = 'none';
+      document.getElementById('rawJsonResponse').innerText = 'Awaiting forecast execution...';
     }
 
     function setWeatherMode(m, elem) {
       currentWeatherMode = m;
       elem.parentElement.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
       elem.classList.add('active');
+      clearPredictionDisplay(`Diagnostic input switched to ${m}. Click 'Run Forecast Model' to evaluate.`);
+      document.getElementById('warningBox').style.display = 'none';
+      document.getElementById('rawJsonResponse').innerText = 'Awaiting forecast execution...';
     }
 
     async function checkHealth() {
@@ -853,6 +977,10 @@
       let endpoint = '/predict/orchestrated';
       let requestBody = {};
 
+      clearPredictionDisplay("Executing inference request...");
+      document.getElementById('warningBox').style.display = 'none';
+      document.getElementById('rawJsonResponse').innerText = 'Submitting request to API...';
+
       if (currentWorkflowMode === 'orchestrated') {
         endpoint = '/predict/orchestrated';
         requestBody = {
@@ -864,49 +992,84 @@
       } else {
         endpoint = '/predict';
         let weatherPayload = null;
+        let featuresPayload = null;
 
-        if (currentWeatherMode === 'live') {
-          weatherPayload = {
-            "temp_f_kphl": 58.06,
-            "temp_f_kewr": 54.91,
-            "temp_f_kilg": 59.61,
-            "temp_f_zonal_weighted": 57.05,
-            "temp_spread_regional": 4.70,
-            "simulated_avail_utc": "2026-10-15T08:50:00Z",
-            "valid_time_utc": "2026-10-15T10:00:00Z",
-            "provenance": "NOAA_HRRR_OPERATIONAL_ECCODES"
-          };
-        } else if (currentWeatherMode === 'fallback') {
-          weatherPayload = {
-            "temp_f_zonal_weighted": 57.05,
-            "temp_spread_regional": 2.54,
-            "simulated_avail_utc": "2026-10-14T11:00:00Z",
-            "valid_time_utc": "2026-10-15T12:00:00Z",
-            "provenance": "FALLBACK_DIURNAL_CLIMATOLOGY",
-            "is_fallback": true
-          };
-        } else if (currentWeatherMode === 'stale') {
-          weatherPayload = {
-            "temp_f_zonal_weighted": 57.05,
-            "temp_spread_regional": 3.50,
-            "simulated_avail_utc": "2026-10-15T01:00:00Z", // 10h old
-            "valid_time_utc": "2026-10-15T12:00:00Z",
-            "provenance": "NOAA_HRRR_OPERATIONAL"
-          };
-        } else if (currentWeatherMode === 'post_cutoff') {
-          weatherPayload = {
-            "temp_f_zonal_weighted": 57.05,
-            "temp_spread_regional": 3.50,
-            "simulated_avail_utc": "2026-10-15T11:55:00Z", // AFTER H=1 cutoff (11:00)!
-            "valid_time_utc": "2026-10-15T12:00:00Z",
-            "provenance": "NOAA_HRRR_OPERATIONAL"
-          };
+        if (currentTargetScenario === 'holdout') {
+          featuresPayload = holdoutFeatures;
+          if (currentWeatherMode === 'fallback_2018') {
+            weatherPayload = {
+              "temp_f_zonal_weighted": 75.20,
+              "temp_spread_regional": 2.54,
+              "simulated_avail_utc": "2018-08-01T06:00:00Z",
+              "valid_time_utc": "2018-08-01T12:00:00Z",
+              "provenance": "FALLBACK_DIURNAL_CLIMATOLOGY",
+              "is_fallback": true
+            };
+          } else if (currentWeatherMode === 'stale_2018') {
+            weatherPayload = {
+              "temp_f_zonal_weighted": 75.20,
+              "temp_spread_regional": 2.54,
+              "simulated_avail_utc": "2018-08-01T01:00:00Z",
+              "valid_time_utc": "2018-08-01T12:00:00Z",
+              "provenance": "FALLBACK_DIURNAL_CLIMATOLOGY",
+              "is_fallback": true
+            };
+          } else if (currentWeatherMode === 'post_cutoff_2018') {
+            weatherPayload = {
+              "temp_f_zonal_weighted": 75.20,
+              "temp_spread_regional": 2.54,
+              "simulated_avail_utc": "2018-08-01T11:55:00Z",
+              "valid_time_utc": "2018-08-01T12:00:00Z",
+              "provenance": "FALLBACK_DIURNAL_CLIMATOLOGY",
+              "is_fallback": true
+            };
+          }
+        } else {
+          // live_cycle (2026-10-15T10:00:00)
+          featuresPayload = liveFeatures;
+          if (currentWeatherMode === 'live_2026') {
+            weatherPayload = {
+              "temp_f_kphl": 58.06,
+              "temp_f_kewr": 54.91,
+              "temp_f_kilg": 59.61,
+              "temp_f_zonal_weighted": 57.05,
+              "temp_spread_regional": 4.70,
+              "simulated_avail_utc": "2026-10-15T08:50:00Z",
+              "valid_time_utc": "2026-10-15T10:00:00Z",
+              "provenance": "NOAA_HRRR_OPERATIONAL_ECCODES"
+            };
+          } else if (currentWeatherMode === 'fallback_2026') {
+            weatherPayload = {
+              "temp_f_zonal_weighted": 57.05,
+              "temp_spread_regional": 2.54,
+              "simulated_avail_utc": "2026-10-15T08:00:00Z",
+              "valid_time_utc": "2026-10-15T10:00:00Z",
+              "provenance": "FALLBACK_DIURNAL_CLIMATOLOGY",
+              "is_fallback": true
+            };
+          } else if (currentWeatherMode === 'stale_2026') {
+            weatherPayload = {
+              "temp_f_zonal_weighted": 57.05,
+              "temp_spread_regional": 4.70,
+              "simulated_avail_utc": "2026-10-15T01:00:00Z",
+              "valid_time_utc": "2026-10-15T10:00:00Z",
+              "provenance": "NOAA_HRRR_OPERATIONAL"
+            };
+          } else if (currentWeatherMode === 'post_cutoff_2026') {
+            weatherPayload = {
+              "temp_f_zonal_weighted": 57.05,
+              "temp_spread_regional": 4.70,
+              "simulated_avail_utc": "2026-10-15T09:45:00Z",
+              "valid_time_utc": "2026-10-15T10:00:00Z",
+              "provenance": "NOAA_HRRR_OPERATIONAL"
+            };
+          }
         }
 
         requestBody = {
           "timestamp": currentTargetTime,
           "horizon": currentHorizon,
-          "features": baseFeatures,
+          "features": featuresPayload,
           "weather_inputs": weatherPayload,
           "enforce_cutoff": true
         };
@@ -938,15 +1101,47 @@
           document.getElementById('q95Text').innerText = data.q95_mw.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1});
           document.getElementById('intervalWidthValue').innerText = `${data.interval_width_mw.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 1})} MW`;
 
+          // Dynamic Interval Bar Scaling
+          const spread = Math.max(data.q95_mw - data.q05_mw, 100.0);
+          const center = data.point_forecast_mw;
+          const plotMin = center - spread * 1.5;
+          const plotMax = center + spread * 1.5;
+          const plotRange = Math.max(plotMax - plotMin, 1.0);
+          const leftPct = Math.max(2, Math.min(90, ((data.q05_mw - plotMin) / plotRange) * 100));
+          const widthPct = Math.max(6, Math.min(96 - leftPct, ((data.q95_mw - data.q05_mw) / plotRange) * 100));
+          const pointPct = Math.max(3, Math.min(97, ((center - plotMin) / plotRange) * 100));
+
+          document.getElementById('intervalSpan').style.left = `${leftPct}%`;
+          document.getElementById('intervalSpan').style.width = `${widthPct}%`;
+          document.getElementById('intervalPoint').style.left = `${pointPct}%`;
+
           // Provenance update
-          document.getElementById('weatherProvenanceBadge').innerText = data.weather_data_provenance;
-          if (data.weather_data_provenance.includes("FALLBACK")) {
+          const prov = data.weather_data_provenance || "UNKNOWN";
+          document.getElementById('weatherProvenanceBadge').innerText = prov;
+          document.getElementById('provenanceBadgeText').innerText = `PROVENANCE: ${prov}`;
+
+          if (prov.includes("FALLBACK")) {
             document.getElementById('weatherProvenanceBadge').className = "badge badge-degraded";
-          } else {
+            document.getElementById('provenanceBadge').className = "badge badge-degraded";
+            document.getElementById('metaSourceText').innerText = "Diurnal Climatology Fallback";
+            document.getElementById('metaDecoderText').innerText = "Diurnal Climatology Model";
+            document.getElementById('metaInitTime').innerText = "N/A (Historical Archive)";
+            document.getElementById('metaLeadTime').innerText = `H=${data.horizon}h (Operational Lead)`;
+            document.getElementById('metaAvailTime').innerText = "Available at Decision Cutoff";
+          } else if (prov.includes("HRRR")) {
             document.getElementById('weatherProvenanceBadge').className = "badge badge-live";
+            document.getElementById('provenanceBadge').className = "badge badge-live";
+            document.getElementById('metaSourceText').innerText = "NOAA AWS Open Data";
+            document.getElementById('metaDecoderText').innerText = "ecCodes 2.50.0 (C-Lib)";
+            document.getElementById('metaInitTime').innerText = "2026-10-15 08:00 UTC";
+            document.getElementById('metaLeadTime').innerText = "f02 (2 Hours)";
+            document.getElementById('metaAvailTime').innerText = "2026-10-15 08:50 UTC";
+          } else {
+            document.getElementById('weatherProvenanceBadge').className = "badge badge-simulated";
+            document.getElementById('provenanceBadge').className = "badge badge-simulated";
           }
 
-          // Warning display
+          // Warnings display
           if (data.data_quality_warnings && data.data_quality_warnings.length > 0) {
             warningBox.style.display = "block";
             warningBox.style.background = "rgba(245, 158, 11, 0.1)";
@@ -959,24 +1154,38 @@
 
         } else {
           const errData = await response.json();
+          clearPredictionDisplay(`ERROR: Request Rejected (${response.status})`, true);
           statusBadge.innerText = `${response.status} ${response.statusText}`;
           statusBadge.className = "badge badge-degraded";
           rawJsonElem.innerText = JSON.stringify(errData, null, 2);
+
+          let guidance = "";
+          if (response.status === 422 && currentTargetScenario === 'live_cycle' && currentWorkflowMode === 'orchestrated') {
+            guidance = "\n\nNote: The historical PJM demand archive covers 2002–2018. To forecast for October 2026 with live NOAA HRRR weather, switch to '🧪 Diagnostic / Template Mode' which supplies template historical demand features.";
+          }
 
           warningBox.style.display = "block";
           warningBox.style.background = "rgba(244, 63, 94, 0.1)";
           warningBox.style.borderColor = "rgba(244, 63, 94, 0.3)";
           warningText.style.color = "#fda4af";
-          warningText.innerText = `[${response.status}] ${errData.detail || "Request rejected"}`;
+          warningText.innerText = `[${response.status}] ${errData.detail || "Request rejected"}${guidance}`;
         }
       } catch (err) {
+        clearPredictionDisplay("Client / Network Error", true);
         document.getElementById('rawJsonResponse').innerText = `Network or client error: ${err.message}`;
+        warningBox.style.display = "block";
+        warningBox.style.background = "rgba(244, 63, 94, 0.1)";
+        warningBox.style.borderColor = "rgba(244, 63, 94, 0.3)";
+        warningText.style.color = "#fda4af";
+        warningText.innerText = `Network or client error: ${err.message}`;
       }
     }
 
     // Auto-initialize
     window.addEventListener('DOMContentLoaded', () => {
       checkHealth();
+      renderDiagnosticWeatherButtons();
+      updateScenarioProvenancePreview();
       executeInference();
     });
   </script>

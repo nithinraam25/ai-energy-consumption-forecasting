@@ -382,10 +382,37 @@ def predict_energy_demand(payload: PredictionRequest) -> PredictionResponse:
         if getattr(w, "is_fallback", False) or "FALLBACK" in (w.provenance or "").upper():
             warnings.append(f"FALLBACK_WEATHER_USED: Weather inputs supplied via fallback provider ({w.provenance}).")
 
-        if w.simulated_avail_utc and w.valid_time_utc:
+        if w.simulated_avail_utc:
             t_avail = pd.to_datetime(w.simulated_avail_utc)
-            t_valid = pd.to_datetime(w.valid_time_utc)
-            t_cutoff = t_valid - pd.Timedelta(hours=payload.horizon)
+            if t_avail.tz is None:
+                t_avail = t_avail.tz_localize("UTC")
+            else:
+                t_avail = t_avail.tz_convert("UTC")
+
+            t_target = pd.to_datetime(payload.timestamp)
+            if t_target.tz is None:
+                t_target = t_target.tz_localize("UTC")
+            else:
+                t_target = t_target.tz_convert("UTC")
+
+            t_cutoff = t_target - pd.Timedelta(hours=payload.horizon)
+
+            if w.valid_time_utc:
+                t_valid = pd.to_datetime(w.valid_time_utc)
+                if t_valid.tz is None:
+                    t_valid = t_valid.tz_localize("UTC")
+                else:
+                    t_valid = t_valid.tz_convert("UTC")
+
+                if abs((t_valid - t_target).total_seconds()) > 3600.0:
+                    record_prediction_failure("weather_timestamp_mismatch")
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail=(
+                            f"WEATHER TIMESTAMP MISMATCH: Weather forecast valid at {w.valid_time_utc} "
+                            f"does not match target forecast timestamp ({payload.timestamp})."
+                        ),
+                    )
 
             # Audit staleness: age beyond the operational cutoff > 6.0h
             slack_hours = (t_cutoff - t_avail).total_seconds() / 3600.0
@@ -395,6 +422,18 @@ def predict_energy_demand(payload: PredictionRequest) -> PredictionResponse:
                     f"{slack_hours:.1f}h older than the H={payload.horizon}h cutoff ({t_cutoff.isoformat()})."
                 )
                 record_audit_failure("stale_weather")
+
+            # Absolute physical guard: weather cannot be disseminated after target time
+            if t_avail > t_target:
+                record_prediction_failure("future_lookahead_violation")
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=(
+                        f"FUTURE LOOKAHEAD VIOLATION: Weather forecast availability ({w.simulated_avail_utc}) "
+                        f"is after the target demand timestamp ({t_target.isoformat()}). "
+                        f"Cannot use future weather to forecast historical demand."
+                    ),
+                )
 
             if payload.enforce_cutoff and t_avail > t_cutoff:
                 record_prediction_failure("causality_cutoff_violation")
