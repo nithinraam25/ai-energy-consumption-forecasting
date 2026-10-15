@@ -281,13 +281,13 @@ def _execute_orchestrated_prediction(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     except MissingDemandHistoryError as exc:
         record_prediction_failure("missing_demand_history")
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc))
     except IncompleteDemandHistoryError as exc:
         record_prediction_failure("incomplete_demand_history")
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc))
     except WeatherUnavailableError as exc:
         record_weather_provider_failure("weather_unavailable")
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc))
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(exc))
     except Exception as exc:
         record_prediction_failure("orchestration_error")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Orchestration failed: {exc}")
